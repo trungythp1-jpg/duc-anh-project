@@ -72,6 +72,7 @@ export function initProjectModule({db,user,profile}) {
         if(!field) throw new Error("Thiếu trường dữ liệu "+id+" trong biểu mẫu. Hãy tải lại trang để cập nhật phiên bản mới.");
         return String(field.value??"").trim();
       };
+    let stage="kiểm tra dữ liệu biểu mẫu";
     try{
       const name=val("#reg-customer-name"), phone=phoneKey(val("#reg-phone")), secondary=val("#reg-secondary-phone")?phoneKey(val("#reg-secondary-phone")):null;
       const phones=[...new Set([phone,secondary].filter(Boolean))], projectName=val("#reg-project-name"), site=val("#reg-site-address"), province=val("#reg-province");
@@ -82,19 +83,26 @@ export function initProjectModule({db,user,profile}) {
       const newCustomer=doc(collection(db,"customers")), project=doc(collection(db,"projects"));
       const locks=phones.map(p=>doc(db,"customer_phone_locks",p)), addrLock=doc(db,"project_address_locks",addrId);
       b.disabled=true;b.textContent="Đang kiểm tra trùng…";
+      stage="đọc khóa chống trùng trong giao dịch";
       await runTransaction(db,async tx=>{
         const lockSnaps=await Promise.all(locks.map(r=>tx.get(r))), addrSnap=await tx.get(addrLock);
         if(addrSnap.exists())throw new Error("Địa chỉ công trình đã có dự án đăng ký. Hệ thống chặn hồ sơ trùng.");
-        const ids=[...new Set(lockSnaps.filter(s=>s.exists()).map(s=>s.data().customerId))];
+        const existingLocks=lockSnaps.filter(s=>s.exists());
+        const ids=[...new Set(existingLocks.map(s=>s.data().customerId))];
         if(ids.length>1)throw new Error("Hai số điện thoại đang thuộc hai hồ sơ khác nhau. Cần Admin rà soát.");
+        if(!admin && existingLocks.some(s=>s.data().ownerSaleUid!==user.uid)){
+          throw new Error("Khách hàng này đã được Sale khác phụ trách. Hệ thống không cho đăng ký trùng khách hàng; vui lòng liên hệ Admin.");
+        }
         const customerId=ids[0]||newCustomer.id;let old=null;
         if(ids.length){
+          stage="kiểm tra hồ sơ khách hàng hiện có";
           const oldSnap=await tx.get(doc(db,"customers",customerId));
           if(!oldSnap.exists())throw new Error("Khóa khách hàng không hợp lệ. Liên hệ Admin.");
           old=oldSnap.data();
           if(old.ownerSaleUid!==user.uid&&!admin)throw new Error("Khách hàng đang thuộc Sale khác. Chỉ Admin mới xử lý chuyển Sale.");
           if(old.status==="archived")throw new Error("Khách hàng đang lưu trữ. Liên hệ Admin.");
         }
+        stage="ghi hồ sơ khách hàng, khóa chống trùng, dự án và lịch sử";
         if(!old)tx.set(doc(db,"customers",customerId),{name,phone,secondaryPhone:secondary,normalizedName:norm(name),normalizedPhone:phone,normalizedPhones:phones,customerType:val("#reg-customer-type"),contactAddress:val("#reg-contact-address")||null,ownerSaleUid:user.uid,ownerSaleName:profile.displayName||user.email||"Sale",status:"active",createdAt:serverTimestamp(),updatedAt:serverTimestamp(),createdBy:user.uid});
         locks.forEach((r,i)=>{if(!lockSnaps[i].exists())tx.set(r,{customerId,ownerSaleUid:user.uid,createdAt:serverTimestamp()});});
         tx.set(addrLock,{projectId:project.id,customerId,ownerSaleUid:user.uid,createdAt:serverTimestamp()});
@@ -102,7 +110,10 @@ export function initProjectModule({db,user,profile}) {
         tx.set(doc(collection(db,"project_history")),{customerId,projectId:project.id,action:"project_registered",actorUid:user.uid,actorRole:profile.role,createdAt:serverTimestamp()});
       });
       f.reset();say("Đăng ký khách hàng và dự án thành công. Quyền phụ trách đã được ghi nhận.",true);await load();view("projects");
-    }catch(e){say(errorText(e));}
+    }catch(e){
+      console.error("[ĐỨC ANH PROJECT] Lỗi đăng ký:",{stage,code:e?.code||"unknown",message:e?.message||String(e),error:e});
+      say(errorText(e,stage));
+    }
     finally{b.disabled=false;b.textContent="Đăng ký khách hàng và dự án";}
   }
   async function archive(id){
@@ -110,9 +121,12 @@ export function initProjectModule({db,user,profile}) {
     try{await updateDoc(doc(db,"projects",id),{status:"archived",archivedAt:serverTimestamp(),archivedBy:user.uid,updatedAt:serverTimestamp()});say("Đã lưu trữ dự án.",true);await load();}
     catch(e){say(errorText(e));}
   }
-  function errorText(e){
-    if(e.code==="permission-denied")return "Firestore hiện chưa mở quyền cho collection nghiệp vụ. Cần triển khai Rules đã kiểm thử trước khi sử dụng.";
-    if(e.code==="unavailable")return "Không thể kết nối Firebase. Kiểm tra mạng và thử lại.";
-    return e.message||"Có lỗi xảy ra.";
+  function errorText(e,stage="thao tác dữ liệu"){
+    if(e?.code==="permission-denied"){
+      return "Firebase từ chối quyền tại bước: "+stage+". Kiểm tra Rules của collection tương ứng và quyền của tài khoản đang đăng nhập. (permission-denied)";
+    }
+    if(e?.code==="unavailable")return "Không thể kết nối Firebase tại bước: "+stage+". Kiểm tra mạng và thử lại.";
+    if(e?.code==="failed-precondition")return "Firebase chưa đáp ứng điều kiện tại bước: "+stage+". Chi tiết: "+(e.message||"");
+    return (e?.message||"Có lỗi xảy ra.")+" [Bước: "+stage+"]";
   }
 }
