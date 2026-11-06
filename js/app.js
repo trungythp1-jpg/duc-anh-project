@@ -1,5 +1,5 @@
 import { auth, db } from "./firebase.js";
-import { initProjectModule } from "./projects.js?v=20261106-3";
+import { initProjectModule } from "./projects.js?v=20261106-4";
 import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
