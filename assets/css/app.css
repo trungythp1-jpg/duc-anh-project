@@ -175,3 +175,10 @@ html, body { width:100%; max-width:100%; overflow-x:hidden; }
 .registration-error.is-duplicate{background:#ffeded;border-color:#b92323;color:#9f1717}
 .registration-error.hidden{display:none!important}
 @media(max-width:760px){.registration-error{font-size:16px;padding:16px}}
+
+.registration-error{display:block;margin:16px 0 0;padding:20px 22px;border:3px solid #b42318;border-left-width:9px;border-radius:12px;background:#fff0ee;color:#991b1b;font-size:17px;font-weight:800;line-height:1.6;box-shadow:0 5px 18px rgba(153,27,27,.13)}
+.registration-error::before{content:"⚠  THÔNG BÁO ĐĂNG KÝ";display:block;margin-bottom:7px;font-size:13px;letter-spacing:.08em}
+.registration-error.is-duplicate{background:#ffeded;border-color:#a91414;color:#8f1010}
+.registration-error.hidden{display:none!important}
+#business-message.hidden{display:none!important}
+@media(max-width:760px){.registration-error{font-size:16px;padding:17px}}
