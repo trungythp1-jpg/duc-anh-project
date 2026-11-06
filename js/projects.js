@@ -42,6 +42,13 @@ export function initProjectModule({db,user,profile}) {
   nav.forEach(b=>b.addEventListener("click",()=>view(b.dataset.view)));
   $("#open-new-project").addEventListener("click",()=>view("register"));
   $("#register-form").addEventListener("submit",register);
+  $("#reg-capacity").addEventListener("change",()=>{
+    const other=$("#reg-capacity-other");
+    const custom=$("#reg-capacity").value==="other";
+    other.classList.toggle("hidden",!custom);
+    other.required=custom;
+    if(!custom)other.value="";
+  });
   $("#customer-filter").addEventListener("input",()=>renderCustomers($("#customer-filter").value));
   $("#project-filter").addEventListener("input",()=>renderProjects($("#project-filter").value));
   $("#refresh-business").addEventListener("click",load);
@@ -86,7 +93,9 @@ export function initProjectModule({db,user,profile}) {
     try{
       const name=val("#reg-customer-name"), phone=phoneKey(val("#reg-phone")), secondary=val("#reg-secondary-phone")?phoneKey(val("#reg-secondary-phone")):null;
       const phones=[...new Set([phone,secondary].filter(Boolean))], projectName=val("#reg-project-name"), site=val("#reg-site-address"), province=val("#reg-province");
-      const capacity=Number(val("#reg-capacity")), stops=Number(val("#reg-stops"));
+      const capacityChoice=val("#reg-capacity");
+      const capacity=capacityChoice==="other"?Number(val("#reg-capacity-other")):Number(capacityChoice);
+      const stops=Number(val("#reg-stops"));
       if(!name||!projectName||!site||!province)throw new Error("Vui lòng nhập đủ tên khách hàng, tên dự án và địa chỉ công trình.");
       if(!(capacity>0)||!Number.isInteger(stops)||stops<=0)throw new Error("Tải trọng và số điểm dừng phải là số lớn hơn 0.");
       const addrNorm=norm(site+" "+province), addrId=await hashKey(addrNorm);
