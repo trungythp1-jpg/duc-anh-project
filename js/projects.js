@@ -67,7 +67,11 @@ export function initProjectModule({db,user,profile}) {
   }
   async function register(ev){
     ev.preventDefault();const f=ev.currentTarget,b=f.querySelector("button[type=submit]");say("");
-    const val=id=>$(id).value.trim();
+    const val=id=>{
+        const field=f.querySelector(id);
+        if(!field) throw new Error("Thiếu trường dữ liệu "+id+" trong biểu mẫu. Hãy tải lại trang để cập nhật phiên bản mới.");
+        return String(field.value??"").trim();
+      };
     try{
       const name=val("#reg-customer-name"), phone=phoneKey(val("#reg-phone")), secondary=val("#reg-secondary-phone")?phoneKey(val("#reg-secondary-phone")):null;
       const phones=[...new Set([phone,secondary].filter(Boolean))], projectName=val("#reg-project-name"), site=val("#reg-site-address"), province=val("#reg-province");
