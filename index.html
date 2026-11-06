@@ -59,6 +59,21 @@
             <p id="sale-message" class="message" role="status" aria-live="polite"></p>
           </form>
         </section>
+        <section id="employee-directory" class="employee-directory hidden">
+          <div class="section-heading">
+            <div><p class="eyebrow">TEAM MANAGEMENT</p><h3>Danh sách nhân viên</h3></div>
+            <span id="employee-count" class="admin-tag">0 NHÂN SỰ</span>
+          </div>
+          <p class="helper">Danh sách tài khoản đã được cấp hồ sơ trong hệ thống Đức Anh Project.</p>
+          <input id="employee-filter" class="search-input" type="search" placeholder="Tìm theo tên hoặc UID nhân viên…">
+          <div class="table-wrap">
+            <table class="employee-table">
+              <thead><tr><th>Nhân viên</th><th>UID</th><th>Vai trò</th><th>Trạng thái</th><th>Ngày tạo</th></tr></thead>
+              <tbody id="employees-table"><tr><td colspan="5" class="empty-cell">Đang tải danh sách…</td></tr></tbody>
+            </table>
+          </div>
+          <p id="employee-message" class="message" role="status" aria-live="polite"></p>
+        </section>
 <section id="business-module" class="business-module hidden">
 <nav class="module-nav"><button type="button" data-view="register" class="active">＋ Đăng ký dự án</button><button type="button" data-view="projects">Danh sách dự án</button><button type="button" data-view="customers">Khách hàng</button><button type="button" id="refresh-business">↻ Làm mới</button></nav>
 <div class="stats-grid"><article class="stat-card"><span>Khách hàng</span><strong id="stat-customers">—</strong><small>Đang hoạt động</small></article><article class="stat-card"><span>Dự án</span><strong id="stat-projects">—</strong><small>Chưa lưu trữ</small></article><article class="stat-card"><span>Sắp hết hạn</span><strong id="stat-expiring">—</strong><small>Trong 5 ngày</small></article></div>
