@@ -3,7 +3,7 @@ import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 import {
-  doc, getDoc, setDoc, serverTimestamp
+  doc, getDoc, runTransaction, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
 const loginView = document.querySelector("#login-view");
@@ -66,8 +66,8 @@ saleForm.addEventListener("submit", async (event) => {
   saleMessage.textContent = "";
 
   const uid = document.querySelector("#sale-uid").value.trim();
-  const displayName = document.querySelector("#sale-name").value.trim();
-  const email = document.querySelector("#sale-email").value.trim().toLowerCase();
+  const enteredName = document.querySelector("#sale-name").value.trim();
+  const displayName = enteredName || `Sale ${uid.slice(-6)}`;
 
   if (!currentAdmin || currentAdmin.role !== "admin") {
     saleMessage.textContent = "Bạn không có quyền tạo hồ sơ Sale.";
@@ -77,30 +77,25 @@ saleForm.addEventListener("submit", async (event) => {
     saleMessage.textContent = "UID không hợp lệ. Hãy dán chính xác UID trong Firebase Authentication.";
     return;
   }
-  if (!displayName || !email) {
-    saleMessage.textContent = "Vui lòng nhập đủ tên hiển thị và email.";
-    return;
-  }
-
   createSaleButton.disabled = true;
   createSaleButton.textContent = "Đang tạo hồ sơ…";
   try {
     const profileRef = doc(db, "users", uid);
-    const existing = await getDoc(profileRef);
-    if (existing.exists()) {
-      throw Object.assign(new Error("UID này đã có hồ sơ trong hệ thống. Không ghi đè dữ liệu hiện có."), { code: "already-exists" });
-    }
-
-    await setDoc(profileRef, {
-      displayName,
-      email,
-      role: "sale",
-      active: true,
-      createdAt: serverTimestamp(),
-      createdBy: currentAdmin.uid
+    await runTransaction(db, async (transaction) => {
+      const existing = await transaction.get(profileRef);
+      if (existing.exists()) {
+        throw Object.assign(new Error("UID này đã có hồ sơ trong hệ thống. Không ghi đè dữ liệu hiện có."), { code: "already-exists" });
+      }
+      transaction.set(profileRef, {
+        displayName,
+        role: "sale",
+        active: true,
+        createdAt: serverTimestamp(),
+        createdBy: currentAdmin.uid
+      });
     });
 
-    saleMessage.textContent = "Đã tạo hồ sơ Sale thành công. Nhân viên có thể đăng nhập bằng email và mật khẩu đã được cấp trong Firebase Authentication.";
+    saleMessage.textContent = "Đã tạo hồ sơ Sale thành công. Tài khoản Auth tương ứng có thể đăng nhập bằng email và mật khẩu đã được tạo trong Firebase Authentication.";
     saleMessage.classList.add("success");
     saleForm.reset();
   } catch (error) {
