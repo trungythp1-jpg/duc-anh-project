@@ -94,3 +94,61 @@ footer{margin-top:44px}
   .stat-card span,.stat-card small{font-size:9px}
   .module-nav button{font-size:9px}
 }
+
+
+/* FINAL OVERRIDE — stacked banner layout on desktop, iPad and iPhone */
+html, body { width:100%; max-width:100%; overflow-x:hidden; }
+.shell {
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  width:100% !important;
+  max-width:none !important;
+  min-height:100vh;
+  margin:0 !important;
+}
+.shell > .brand-panel,
+.shell > .content-panel {
+  display:flex;
+  flex:0 0 auto !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+}
+.shell > .brand-panel {
+  min-height:220px;
+  padding:28px clamp(20px,5vw,64px) 32px;
+}
+.shell > .content-panel {
+  min-height:0 !important;
+  padding:32px clamp(16px,5vw,64px) 26px;
+  justify-content:flex-start !important;
+}
+.shell .auth-card,
+.shell .app-card { width:100%; max-width:1100px; }
+.shell .stats-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.shell .module-nav { display:flex; flex-wrap:wrap; }
+.shell .module-view { min-width:0; }
+.shell .form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.shell .table-wrap { max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+
+@media (max-width:760px) {
+  .shell > .brand-panel { min-height:0; padding:22px 20px 24px; }
+  .shell .brand-mark { width:42px; height:42px; margin-bottom:12px; }
+  .shell .brand-panel h1 { font-size:32px; }
+  .shell .brand-copy { font-size:11px; margin-top:8px; max-width:100%; }
+  .shell > .content-panel { padding:24px 15px 22px; }
+  .shell .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .shell .stat-card { min-width:0; padding:11px; min-height:94px; }
+  .shell .module-nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .shell .module-nav button { min-width:0; padding:9px 7px; font-size:10px; }
+  .shell .form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .shell .module-view { padding:14px 12px; }
+}
+@media (max-width:390px) {
+  .shell > .brand-panel { padding:19px 17px 21px; }
+  .shell .brand-panel h1 { font-size:29px; }
+  .shell > .content-panel { padding-left:12px; padding-right:12px; }
+  .shell .form-grid { grid-template-columns:1fr; }
+  .shell .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
