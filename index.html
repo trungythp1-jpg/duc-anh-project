@@ -43,7 +43,25 @@
           <article class="stat-card"><span>Dự án đang phụ trách</span><strong>—</strong><small>Chưa kết nối dữ liệu</small></article>
           <article class="stat-card"><span>Yêu cầu chuyển Sale</span><strong>—</strong><small>Chưa kết nối dữ liệu</small></article>
         </div>
-        <div class="notice"><strong>Giai đoạn khởi tạo</strong><p>Giao diện đăng nhập đã sẵn sàng. Các nghiệp vụ khách hàng, dự án và chuyển Sale sẽ được bật sau khi hoàn tất kiểm thử bảo mật Firestore.</p></div>
+        <section id="admin-tools" class="admin-tools hidden">
+          <div class="section-heading">
+            <div><p class="eyebrow">ADMINISTRATION</p><h3>Tạo hồ sơ nhân viên Sale</h3></div>
+            <span class="admin-tag">ADMIN ONLY</span>
+          </div>
+          <p class="helper">Tạo hồ sơ phân quyền cho tài khoản đã được tạo trong Firebase Authentication. Chỉ cần dán UID và nhập thông tin nhân viên.</p>
+          <form id="sale-form" class="sale-form">
+            <label for="sale-uid">Firebase Auth UID</label>
+            <input id="sale-uid" type="text" autocomplete="off" placeholder="Dán UID tài khoản Sale tại đây" required>
+            <label for="sale-name">Tên hiển thị</label>
+            <input id="sale-name" type="text" autocomplete="name" placeholder="Ví dụ: Nguyễn Văn A" required>
+            <label for="sale-email">Email tài khoản</label>
+            <input id="sale-email" type="email" autocomplete="email" placeholder="sale@duc anh.com" required>
+            <div class="form-note"><strong>Vai trò:</strong> SALE &nbsp;·&nbsp; <strong>Trạng thái:</strong> Đang hoạt động</div>
+            <button id="create-sale-btn" class="primary-btn" type="submit">Tạo hồ sơ Sale <span>＋</span></button>
+            <p id="sale-message" class="message" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+        <div class="notice"><strong>Giai đoạn khởi tạo</strong><p>Các nghiệp vụ khách hàng và dự án sẽ được bật sau khi hoàn tất kiểm thử bảo mật Firestore.</p></div>
         <p id="profile-message" class="message"></p>
       </div>
       <footer>© 2026 THANG MÁY ĐỨC ANH</footer>
