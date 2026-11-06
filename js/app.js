@@ -4,7 +4,7 @@ import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 import {
-  doc, getDoc, runTransaction, serverTimestamp
+  collection, doc, getDoc, getDocs, runTransaction, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
 const loginView = document.querySelector("#login-view");
@@ -20,10 +20,75 @@ const createSaleButton = document.querySelector("#create-sale-btn");
 
 let currentAdmin = null;
 
+const employeeDirectory = document.querySelector("#employee-directory");
+const employeesTable = document.querySelector("#employees-table");
+const employeeFilter = document.querySelector("#employee-filter");
+const employeeCount = document.querySelector("#employee-count");
+const employeeMessage = document.querySelector("#employee-message");
+let employeeProfiles = [];
+
+function formatEmployeeDate(value) {
+  if (!value) return "—";
+  const date = typeof value.toDate === "function" ? value.toDate() : new Date(value);
+  return Number.isNaN(date.getTime()) ? "—" : new Intl.DateTimeFormat("vi-VN").format(date);
+}
+
+function renderEmployees() {
+  const term = (employeeFilter?.value || "").trim().toLocaleLowerCase("vi");
+  const rows = employeeProfiles.filter(({ uid, profile }) => {
+    const text = `${profile.displayName || ""} ${uid}`.toLocaleLowerCase("vi");
+    return text.includes(term);
+  });
+
+  employeeCount.textContent = `${employeeProfiles.length} NHÂN SỰ`;
+  if (!rows.length) {
+    employeesTable.innerHTML = `<tr><td colspan="5" class="empty-cell">${employeeProfiles.length ? "Không tìm thấy nhân viên phù hợp." : "Chưa có hồ sơ nhân viên."}</td></tr>`;
+    return;
+  }
+
+  employeesTable.innerHTML = rows.map(({ uid, profile }) => {
+    const role = profile.role === "admin" ? "Quản trị viên" : "Sale";
+    const active = profile.active === true;
+    return `<tr>
+      <td><strong>${escapeEmployeeText(profile.displayName || "Chưa đặt tên")}</strong></td>
+      <td><code>${escapeEmployeeText(uid)}</code></td>
+      <td>${role}</td>
+      <td><span class="employee-status ${active ? "is-active" : "is-inactive"}">${active ? "Đang hoạt động" : "Đã khóa"}</span></td>
+      <td>${formatEmployeeDate(profile.createdAt)}</td>
+    </tr>`;
+  }).join("");
+}
+
+function escapeEmployeeText(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[char]);
+}
+
+async function loadEmployees() {
+  if (!currentAdmin || currentAdmin.role !== "admin") return;
+  employeeMessage.textContent = "Đang tải danh sách nhân viên…";
+  employeeMessage.classList.remove("success");
+  try {
+    const snapshot = await getDocs(collection(db, "users"));
+    employeeProfiles = snapshot.docs.map(item => ({ uid: item.id, profile: item.data() }))
+      .sort((a, b) => (a.profile.displayName || a.uid).localeCompare(b.profile.displayName || b.uid, "vi"));
+    renderEmployees();
+    employeeMessage.textContent = "";
+  } catch (error) {
+    employeeProfiles = [];
+    renderEmployees();
+    employeeMessage.textContent = friendlyError(error);
+  }
+}
+
+employeeFilter?.addEventListener("input", renderEmployees);
+
 function showLogin(message = "") {
   loginView.classList.remove("hidden");
   appView.classList.add("hidden");
   adminTools.classList.add("hidden");
+  employeeDirectory?.classList.add("hidden");
   loginMessage.textContent = message;
   currentAdmin = null;
 }
@@ -99,6 +164,7 @@ saleForm.addEventListener("submit", async (event) => {
     saleMessage.textContent = "Đã tạo hồ sơ Sale thành công. Tài khoản Auth tương ứng có thể đăng nhập bằng email và mật khẩu đã được tạo trong Firebase Authentication.";
     saleMessage.classList.add("success");
     saleForm.reset();
+    await loadEmployees();
   } catch (error) {
     saleMessage.textContent = friendlyError(error);
   } finally {
@@ -147,6 +213,8 @@ onAuthStateChanged(auth, async (user) => {
     if (profile.role === "admin") {
       currentAdmin = { uid: user.uid, role: "admin" };
       adminTools.classList.remove("hidden");
+      employeeDirectory.classList.remove("hidden");
+      await loadEmployees();
     }
   } catch (error) {
     document.querySelector("#role-chip").textContent = "CHƯA XÁC MINH ĐƯỢC QUYỀN";
