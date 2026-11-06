@@ -35,7 +35,8 @@ export function initProjectModule({db,user,profile}) {
   $("#customer-filter").addEventListener("input",()=>renderCustomers($("#customer-filter").value));
   $("#project-filter").addEventListener("input",()=>renderProjects($("#project-filter").value));
   $("#refresh-business").addEventListener("click",load);
-  if(admin)$("#admin-operations").classList.remove("hidden");
+  // Phần tử admin-operations chưa có trong giao diện hiện tại; kiểm tra tồn tại trước khi thao tác.
+  if(admin) $("#admin-operations")?.classList.remove("hidden");
   view("register");load();
 
   async function fetchRows(name){
