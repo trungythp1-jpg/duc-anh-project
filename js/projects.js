@@ -5,9 +5,9 @@ import {
 
 const $ = (s, root=document) => root.querySelector(s);
 const esc = (v="") => String(v).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const norm = v => String(v||"").normalize("NFC").trim().toLocaleLowerCase("vi").replace(/[.,;:/\\-]+/g," ").replace(/\\s+/g," ");
+const norm = v => String(v||"").normalize("NFC").trim().toLocaleLowerCase("vi").replace(/[.,;:/-]+/g," ").replace(/\s+/g," ");
 function phoneKey(value) {
-  let d=String(value||"").replace(/\\D/g,"");
+  let d=String(value||"").replace(/\D/g,"");
   if(d.startsWith("0084")) d=d.slice(2);
   if(d.startsWith("84")) d=d.slice(2);
   if(d.startsWith("0")) d=d.slice(1);
