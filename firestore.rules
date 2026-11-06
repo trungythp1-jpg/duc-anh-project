@@ -1,29 +1,110 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
     function signedIn() {
       return request.auth != null;
     }
 
-    function isAdmin() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.active == true;
+    function profilePath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
     }
 
-    // User profiles: each account can read its own profile.
-    // Admin can read and manage all profiles.
+    function activeUser() {
+      return signedIn()
+        && exists(profilePath(request.auth.uid))
+        && get(profilePath(request.auth.uid)).data.active == true
+        && get(profilePath(request.auth.uid)).data.role in ["admin", "sale"];
+    }
+
+    function isAdmin() {
+      return activeUser()
+        && get(profilePath(request.auth.uid)).data.role == "admin";
+    }
+
+    function owns(data) {
+      return activeUser() && data.ownerSaleUid == request.auth.uid;
+    }
+
     match /users/{userId} {
-      allow get: if signedIn() && (
-        request.auth.uid == userId || isAdmin()
-      );
+      allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
-    // All business collections remain closed in this bootstrap phase.
+    match /customers/{customerId} {
+      allow get, list: if isAdmin() || owns(resource.data);
+      allow create: if activeUser()
+        && request.resource.data.ownerSaleUid == request.auth.uid
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == "active"
+        && request.resource.data.normalizedPhone is string
+        && existsAfter(/databases/$(database)/documents/customer_phone_locks/$(request.resource.data.normalizedPhone))
+        && getAfter(/databases/$(database)/documents/customer_phone_locks/$(request.resource.data.normalizedPhone)).data.customerId == customerId
+        && getAfter(/databases/$(database)/documents/customer_phone_locks/$(request.resource.data.normalizedPhone)).data.ownerSaleUid == request.auth.uid;
+      allow update: if isAdmin()
+        || (owns(resource.data)
+          && request.resource.data.ownerSaleUid == resource.data.ownerSaleUid
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["updatedAt", "contactAddress"]));
+      allow delete: if false;
+    }
+
+    match /projects/{projectId} {
+      allow get, list: if isAdmin() || owns(resource.data);
+      allow create: if activeUser()
+        && request.resource.data.ownerSaleUid == request.auth.uid
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.status == "new_contact"
+        && request.resource.data.claimDurationDays == 30
+        && request.resource.data.capacityKg is number
+        && request.resource.data.capacityKg > 0
+        && request.resource.data.stops is int
+        && request.resource.data.stops > 0
+        && existsAfter(/databases/$(database)/documents/customers/$(request.resource.data.customerId))
+        && getAfter(/databases/$(database)/documents/customers/$(request.resource.data.customerId)).data.ownerSaleUid == request.auth.uid
+        && existsAfter(/databases/$(database)/documents/project_address_locks/$(request.resource.data.addressLockId))
+        && getAfter(/databases/$(database)/documents/project_address_locks/$(request.resource.data.addressLockId)).data.projectId == projectId
+        && getAfter(/databases/$(database)/documents/project_address_locks/$(request.resource.data.addressLockId)).data.ownerSaleUid == request.auth.uid;
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "archivedAt", "archivedBy", "updatedAt"])
+        && (request.resource.data.status == "archived" || request.resource.data.status == resource.data.status)
+        && (!("archivedBy" in request.resource.data) || request.resource.data.archivedBy == request.auth.uid);
+      allow delete: if false;
+    }
+
+    match /customer_phone_locks/{lockId} {
+      allow get: if activeUser();
+      allow list: if false;
+      allow create: if activeUser()
+        && request.resource.data.ownerSaleUid == request.auth.uid
+        && request.resource.data.customerId is string
+        && existsAfter(/databases/$(database)/documents/customers/$(request.resource.data.customerId))
+        && getAfter(/databases/$(database)/documents/customers/$(request.resource.data.customerId)).data.ownerSaleUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /project_address_locks/{lockId} {
+      allow get: if activeUser();
+      allow list: if false;
+      allow create: if activeUser()
+        && request.resource.data.ownerSaleUid == request.auth.uid
+        && request.resource.data.projectId is string
+        && existsAfter(/databases/$(database)/documents/projects/$(request.resource.data.projectId))
+        && getAfter(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.ownerSaleUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /project_history/{historyId} {
+      allow get, list: if isAdmin()
+        || (activeUser() && resource.data.actorUid == request.auth.uid);
+      allow create: if activeUser()
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.action == "project_registered"
+        && existsAfter(/databases/$(database)/documents/projects/$(request.resource.data.projectId))
+        && getAfter(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.ownerSaleUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
