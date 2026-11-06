@@ -26,6 +26,13 @@ export function initProjectModule({db,user,profile}) {
   const root=$("#business-module"); if(!root)return;
   const admin=profile.role==="admin", owner=admin?null:user.uid, msg=$("#business-message");
   const say=(t,ok=false)=>{msg.textContent=t;msg.className="message"+(ok?" success":"");};
+  const registrationError=$("#registration-error");
+  const showRegistrationError=(t)=>{
+    registrationError.textContent=t;
+    registrationError.classList.toggle("hidden",!t);
+    registrationError.classList.toggle("is-duplicate",/trùng|đã có dự án|Sale khác|đã được/i.test(t));
+    if(t) registrationError.scrollIntoView?.({behavior:"smooth",block:"center"});
+  };
   let customers=[],projects=[];
   const nav=[...root.querySelectorAll("[data-view]")];
   function view(name){root.querySelectorAll(".module-view").forEach(x=>x.classList.toggle("hidden",x.id!=="view-"+name));nav.forEach(x=>x.classList.toggle("active",x.dataset.view===name));if(name==="customers")load();if(name==="projects")load();}
@@ -66,7 +73,7 @@ export function initProjectModule({db,user,profile}) {
     s.innerHTML='<option value="">Chọn khách hàng</option>'+customers.filter(c=>c.status!=="archived").map(c=>'<option value="'+esc(c.id)+'">'+esc(c.name)+' · '+esc(c.phone)+'</option>').join("");
   }
   async function register(ev){
-    ev.preventDefault();const f=ev.currentTarget,b=f.querySelector("button[type=submit]");say("");
+    ev.preventDefault();const f=ev.currentTarget,b=f.querySelector("button[type=submit]");say("");showRegistrationError("");
     const val=id=>{
         const field=f.querySelector(id);
         if(!field) throw new Error("Thiếu trường dữ liệu "+id+" trong biểu mẫu. Hãy tải lại trang để cập nhật phiên bản mới.");
@@ -109,10 +116,10 @@ export function initProjectModule({db,user,profile}) {
         tx.set(project,{customerId,customerName:name,ownerSaleUid:user.uid,ownerSaleName:profile.displayName||user.email||"Sale",projectName,siteAddress:site,normalizedSiteAddress:addrNorm,addressLockId:addrId,provinceCity:province,projectType:val("#reg-project-type"),expectedElevatorQuantity:val("#reg-elevator-qty")?Number(val("#reg-elevator-qty")):null,expectedDeploymentAt:val("#reg-deployment")||null,capacityKg:capacity,stops,status:"new_contact",claimStartedAt:serverTimestamp(),claimDurationDays:30,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),createdBy:user.uid});
         tx.set(doc(collection(db,"project_history")),{customerId,projectId:project.id,action:"project_registered",actorUid:user.uid,actorRole:profile.role,createdAt:serverTimestamp()});
       });
-      f.reset();say("Đăng ký khách hàng và dự án thành công. Quyền phụ trách đã được ghi nhận.",true);await load();view("projects");
+      f.reset();showRegistrationError("");say("Đăng ký khách hàng và dự án thành công. Quyền phụ trách đã được ghi nhận.",true);await load();view("projects");
     }catch(e){
       console.error("[ĐỨC ANH PROJECT] Lỗi đăng ký:",{stage,code:e?.code||"unknown",message:e?.message||String(e),error:e});
-      say(errorText(e,stage));
+      say("");showRegistrationError(errorText(e,stage));
     }
     finally{b.disabled=false;b.textContent="Đăng ký khách hàng và dự án";}
   }
