@@ -20,6 +20,7 @@ async function hashKey(value) {
 }
 const statusName = s => ({new_contact:"Mới tiếp cận",survey:"Khảo sát",consulting:"Tư vấn",quote_sent:"Đã gửi báo giá",negotiating:"Đàm phán",signed:"Đã ký hợp đồng",lost:"Không thành công",expired_review:"Chờ Admin xem xét",archived:"Đã lưu trữ"})[s]||s||"—";
 const dateName = v => {if(!v)return "—";const d=v.toDate?v.toDate():new Date(v);return isNaN(d)? "—":d.toLocaleDateString("vi-VN");};
+const expiryOf = p => {if(!p.claimStartedAt)return null;const start=p.claimStartedAt.toDate?p.claimStartedAt.toDate():new Date(p.claimStartedAt);return new Date(start.getTime()+(Number(p.claimDurationDays)||30)*86400000);};
 
 export function initProjectModule({db,user,profile}) {
   const root=$("#business-module"); if(!root)return;
@@ -46,7 +47,7 @@ export function initProjectModule({db,user,profile}) {
       [customers,projects]=await Promise.all([fetchRows("customers"),fetchRows("projects")]);
       $("#stat-customers").textContent=customers.filter(x=>x.status!=="archived").length;
       $("#stat-projects").textContent=projects.filter(x=>x.status!=="archived").length;
-      $("#stat-expiring").textContent=projects.filter(x=>x.claimExpiresAt&&x.claimExpiresAt.toDate&&x.claimExpiresAt.toDate().getTime()<Date.now()+5*86400000&&x.status!=="signed"&&x.status!=="archived").length;
+      $("#stat-expiring").textContent=projects.filter(x=>expiryOf(x)&&expiryOf(x).getTime()<Date.now()+5*86400000&&x.status!=="signed"&&x.status!=="archived").length;
       renderCustomers();renderProjects();fillCustomerOptions();
     }catch(e){say(errorText(e));}
   }
@@ -56,7 +57,7 @@ export function initProjectModule({db,user,profile}) {
   }
   function renderProjects(term=""){
     const q=norm(term), rows=projects.filter(p=>norm([p.projectName,p.customerName,p.siteAddress,p.provinceCity].join(" ")).includes(q));
-    $("#projects-table").innerHTML=rows.length?rows.map(p=>"<tr><td><b>"+esc(p.projectName)+"</b><small>"+esc(p.customerName||"")+"</small></td><td>"+esc(p.siteAddress)+"</td><td>"+esc(p.capacityKg)+" kg · "+esc(p.stops)+" điểm dừng</td><td>"+esc(statusName(p.status))+"</td><td>"+dateName(p.claimExpiresAt)+"</td><td>"+(admin&&p.status!=="archived"?'<button class="table-action" data-archive="'+esc(p.id)+'">Lưu trữ</button>':"—")+"</td></tr>").join(""):'<tr><td colspan="6" class="empty-cell">Chưa có dự án</td></tr>';
+    $("#projects-table").innerHTML=rows.length?rows.map(p=>"<tr><td><b>"+esc(p.projectName)+"</b><small>"+esc(p.customerName||"")+"</small></td><td>"+esc(p.siteAddress)+"</td><td>"+esc(p.capacityKg)+" kg · "+esc(p.stops)+" điểm dừng</td><td>"+esc(statusName(p.status))+"</td><td>"+dateName(expiryOf(p))+"</td><td>"+(admin&&p.status!=="archived"?'<button class="table-action" data-archive="'+esc(p.id)+'">Lưu trữ</button>':"—")+"</td></tr>").join(""):'<tr><td colspan="6" class="empty-cell">Chưa có dự án</td></tr>';
     $("#projects-table").querySelectorAll("[data-archive]").forEach(b=>b.addEventListener("click",()=>archive(b.dataset.archive)));
   }
   function fillCustomerOptions(){
@@ -89,10 +90,10 @@ export function initProjectModule({db,user,profile}) {
           if(old.ownerSaleUid!==user.uid&&!admin)throw new Error("Khách hàng đang thuộc Sale khác. Chỉ Admin mới xử lý chuyển Sale.");
           if(old.status==="archived")throw new Error("Khách hàng đang lưu trữ. Liên hệ Admin.");
         }
-        if(!old)tx.create(doc(db,"customers",customerId),{name,phone,secondaryPhone:secondary,normalizedName:norm(name),customerType:val("#reg-customer-type"),contactAddress:val("#reg-contact-address")||null,ownerSaleUid:user.uid,ownerSaleName:profile.displayName||user.email||"Sale",status:"active",createdAt:serverTimestamp(),updatedAt:serverTimestamp(),createdBy:user.uid});
-        locks.forEach((r,i)=>{if(!lockSnaps[i].exists())tx.create(r,{customerId,ownerSaleUid:user.uid,createdAt:serverTimestamp()});});
-        tx.create(project,{customerId,customerName:name,ownerSaleUid:user.uid,ownerSaleName:profile.displayName||user.email||"Sale",projectName,siteAddress:site,normalizedSiteAddress:addrNorm,provinceCity:province,projectType:val("#reg-project-type"),buildingSize:val("#reg-building-size")||null,floors:val("#reg-floors")?Number(val("#reg-floors")):null,expectedElevatorQuantity:val("#reg-elevator-qty")?Number(val("#reg-elevator-qty")):null,expectedDeploymentAt:val("#reg-deployment")||null,capacityKg:capacity,stops,status:"new_contact",claimStartedAt:serverTimestamp(),claimExpiresAt:new Date(Date.now()+30*86400000),createdAt:serverTimestamp(),updatedAt:serverTimestamp(),createdBy:user.uid});
-        tx.create(doc(collection(db,"project_history")),{customerId,projectId:project.id,action:"project_registered",actorUid:user.uid,actorRole:profile.role,createdAt:serverTimestamp()});
+        if(!old)tx.set(doc(db,"customers",customerId),{name,phone,secondaryPhone:secondary,normalizedName:norm(name),customerType:val("#reg-customer-type"),contactAddress:val("#reg-contact-address")||null,ownerSaleUid:user.uid,ownerSaleName:profile.displayName||user.email||"Sale",status:"active",createdAt:serverTimestamp(),updatedAt:serverTimestamp(),createdBy:user.uid});
+        locks.forEach((r,i)=>{if(!lockSnaps[i].exists())tx.set(r,{customerId,ownerSaleUid:user.uid,createdAt:serverTimestamp()});});
+        tx.set(project,{customerId,customerName:name,ownerSaleUid:user.uid,ownerSaleName:profile.displayName||user.email||"Sale",projectName,siteAddress:site,normalizedSiteAddress:addrNorm,provinceCity:province,projectType:val("#reg-project-type"),buildingSize:val("#reg-building-size")||null,floors:val("#reg-floors")?Number(val("#reg-floors")):null,expectedElevatorQuantity:val("#reg-elevator-qty")?Number(val("#reg-elevator-qty")):null,expectedDeploymentAt:val("#reg-deployment")||null,capacityKg:capacity,stops,status:"new_contact",claimStartedAt:serverTimestamp(),claimDurationDays:30,createdAt:serverTimestamp(),updatedAt:serverTimestamp(),createdBy:user.uid});
+        tx.set(doc(collection(db,"project_history")),{customerId,projectId:project.id,action:"project_registered",actorUid:user.uid,actorRole:profile.role,createdAt:serverTimestamp()});
       });
       f.reset();say("Đăng ký khách hàng và dự án thành công. Quyền phụ trách đã được ghi nhận.",true);await load();view("projects");
     }catch(e){say(errorText(e));}
