@@ -1,0 +1,42 @@
+// PROPOSED ONLY — DO NOT PUBLISH UNTIL REVIEWED
+// Existing firestore.rules remains unchanged.
+// This draft is intentionally not a live ruleset. Lock rules require Emulator/security testing.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function userDoc(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+    function activeUser() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && userDoc(request.auth.uid).active == true;
+    }
+    function isAdmin() {
+      return activeUser() && userDoc(request.auth.uid).role == "admin";
+    }
+    function isSale() {
+      return activeUser() && userDoc(request.auth.uid).role == "sale";
+    }
+
+    match /users/{uid} {
+      allow get: if activeUser() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Customer and project collections are NOT enabled by this draft.
+    // Before activation, rules must validate getAfter() lock ownership,
+    // immutable ownerSaleUid, server timestamps, field allowlists and admin-only edits.
+    match /customers/{id} { allow read, write: if false; }
+    match /customer_phone_locks/{id} { allow read, write: if false; }
+    match /projects/{id} { allow read, write: if false; }
+    match /project_address_locks/{id} { allow read, write: if false; }
+    match /project_activities/{id} { allow read, write: if false; }
+    match /project_history/{id} { allow read, write: if false; }
+    match /audit_logs/{id} { allow read, write: if false; }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
