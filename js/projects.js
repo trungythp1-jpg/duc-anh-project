@@ -28,10 +28,13 @@ export function initProjectModule({db,user,profile}) {
   const say=(t,ok=false)=>{msg.textContent=t;msg.className="message"+(ok?" success":"");};
   const registrationError=$("#registration-error");
   const showRegistrationError=(t)=>{
+    // Lỗi đăng ký chỉ hiển thị tại form, không đẩy lên dòng thông báo tổng quan.
+    msg.textContent="";
+    msg.className="message hidden";
     registrationError.textContent=t;
     registrationError.classList.toggle("hidden",!t);
     registrationError.classList.toggle("is-duplicate",/trùng|đã có dự án|Sale khác|đã được/i.test(t));
-    if(t) registrationError.scrollIntoView?.({behavior:"smooth",block:"center"});
+    if(t) requestAnimationFrame(()=>registrationError.scrollIntoView?.({behavior:"smooth",block:"center"}));
   };
   let customers=[],projects=[];
   const nav=[...root.querySelectorAll("[data-view]")];
@@ -119,7 +122,9 @@ export function initProjectModule({db,user,profile}) {
       f.reset();showRegistrationError("");say("Đăng ký khách hàng và dự án thành công. Quyền phụ trách đã được ghi nhận.",true);await load();view("projects");
     }catch(e){
       console.error("[ĐỨC ANH PROJECT] Lỗi đăng ký:",{stage,code:e?.code||"unknown",message:e?.message||String(e),error:e});
-      say("");showRegistrationError(errorText(e,stage));
+      showRegistrationError(e?.code==="permission-denied"
+        ? "FIREBASE CHƯA CẤP QUYỀN GHI HỒ SƠ. Hệ thống đã kiểm tra dữ liệu nhưng bị Firestore từ chối tại bước: "+stage+". Đây chưa phải kết luận số điện thoại bị trùng. Cần đối chiếu Rules đang Publish với Rules trong GitHub."
+        : errorText(e,stage));
     }
     finally{b.disabled=false;b.textContent="Đăng ký khách hàng và dự án";}
   }
