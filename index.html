@@ -87,7 +87,7 @@
 <div class="form-grid"><div><label for="reg-province">Tỉnh / Thành phố *</label><input id="reg-province" required placeholder="Hải Phòng"></div><div><label for="reg-project-type">Loại công trình</label><select id="reg-project-type"><option>Nhà ở gia đình</option><option>Khách sạn</option><option>Chung cư</option><option>Tòa nhà văn phòng</option><option>Bệnh viện</option><option>Nhà xưởng</option><option>Công trình khác</option></select></div></div>
 <div class="form-grid"><div><label for="reg-elevator-qty">Số lượng thang dự kiến</label><input id="reg-elevator-qty" type="number" min="1"></div><div><label for="reg-deployment">Thời gian triển khai dự kiến</label><input id="reg-deployment" type="date"></div></div>
 <h4>03 · Nhu cầu thang máy</h4><div class="form-grid"><div><label for="reg-capacity">Tải trọng dự kiến (kg) *</label><input id="reg-capacity" type="number" min="1" required></div><div><label for="reg-stops">Số điểm dừng *</label><input id="reg-stops" type="number" min="1" required></div></div>
-<button class="primary-btn" type="submit">Đăng ký khách hàng và dự án <span>→</span></button></form></section>
+<button class="primary-btn" type="submit">Đăng ký khách hàng và dự án <span>→</span></button><p id="registration-error" class="registration-error hidden" role="alert" aria-live="assertive"></p></form></section>
 <section id="view-projects" class="module-view hidden"><h3>Danh sách dự án</h3><input id="project-filter" class="search-input" placeholder="Tìm dự án, khách hàng, địa chỉ…"><div class="table-wrap"><table><thead><tr><th>Dự án / Khách hàng</th><th>Địa chỉ</th><th>Nhu cầu thang</th><th>Trạng thái</th><th>Hạn giữ</th><th>Thao tác</th></tr></thead><tbody id="projects-table"></tbody></table></div><button id="open-new-project" class="quiet-btn" type="button">＋ Đăng ký dự án mới</button></section>
 <section id="view-customers" class="module-view hidden"><h3>Danh sách khách hàng</h3><input id="customer-filter" class="search-input" placeholder="Tìm khách hàng, số điện thoại…"><div class="table-wrap"><table><thead><tr><th>Khách hàng</th><th>Điện thoại</th><th>Loại</th><th>Sale phụ trách</th><th>Trạng thái</th></tr></thead><tbody id="customers-table"></tbody></table></div></section>
 </section>
@@ -97,6 +97,6 @@
       <footer>© 2026 THANG MÁY ĐỨC ANH</footer>
     </section>
   </main>
-  <script type="module" src="./js/app.js?v=20261106-3"></script>
+  <script type="module" src="./js/app.js?v=20261106-4"></script>
 </body>
 </html>
