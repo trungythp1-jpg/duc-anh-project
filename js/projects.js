@@ -1,5 +1,5 @@
 import {
-  collection, doc, getDocs, query, where, limit, runTransaction,
+  collection, doc, getDoc, getDocs, query, where, limit, runTransaction,
   serverTimestamp, updateDoc
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
@@ -93,6 +93,20 @@ export function initProjectModule({db,user,profile}) {
       const newCustomer=doc(collection(db,"customers")), project=doc(collection(db,"projects"));
       const locks=phones.map(p=>doc(db,"customer_phone_locks",p)), addrLock=doc(db,"project_address_locks",addrId);
       b.disabled=true;b.textContent="Đang kiểm tra trùng…";
+
+      // Kiểm tra số điện thoại trước giao dịch để hiển thị lỗi nghiệp vụ dễ hiểu.
+      // Giao dịch bên dưới vẫn là lớp bảo vệ cuối cùng, tránh hai Sale đăng ký đồng thời.
+      stage="kiểm tra số điện thoại đã đăng ký";
+      const phoneLockSnaps = await Promise.all(
+        phones.map(p => getDoc(doc(db,"customer_phone_locks",p)))
+      );
+      const foreignPhoneLock = phoneLockSnaps.find(s =>
+        s.exists() && s.data().ownerSaleUid !== user.uid
+      );
+      if (foreignPhoneLock) {
+        throw new Error("SỐ ĐIỆN THOẠI ĐÃ ĐƯỢC ĐĂNG KÝ BỞI SALE KHÁC. Vui lòng kiểm tra lại số điện thoại hoặc liên hệ Admin.");
+      }
+
       stage="đọc khóa chống trùng trong giao dịch";
       await runTransaction(db,async tx=>{
         const lockSnaps=await Promise.all(locks.map(r=>tx.get(r))), addrSnap=await tx.get(addrLock);
@@ -101,7 +115,7 @@ export function initProjectModule({db,user,profile}) {
         const ids=[...new Set(existingLocks.map(s=>s.data().customerId))];
         if(ids.length>1)throw new Error("Hai số điện thoại đang thuộc hai hồ sơ khác nhau. Cần Admin rà soát.");
         if(!admin && existingLocks.some(s=>s.data().ownerSaleUid!==user.uid)){
-          throw new Error("Khách hàng này đã được Sale khác phụ trách. Hệ thống không cho đăng ký trùng khách hàng; vui lòng liên hệ Admin.");
+          throw new Error("SỐ ĐIỆN THOẠI ĐÃ ĐƯỢC ĐĂNG KÝ BỞI SALE KHÁC. Vui lòng kiểm tra lại số điện thoại hoặc liên hệ Admin.");
         }
         const customerId=ids[0]||newCustomer.id;let old=null;
         if(ids.length){
@@ -122,9 +136,10 @@ export function initProjectModule({db,user,profile}) {
       f.reset();showRegistrationError("");say("Đăng ký khách hàng và dự án thành công. Quyền phụ trách đã được ghi nhận.",true);await load();view("projects");
     }catch(e){
       console.error("[ĐỨC ANH PROJECT] Lỗi đăng ký:",{stage,code:e?.code||"unknown",message:e?.message||String(e),error:e});
-      showRegistrationError(e?.code==="permission-denied"
-        ? "FIREBASE CHƯA CẤP QUYỀN GHI HỒ SƠ. Hệ thống đã kiểm tra dữ liệu nhưng bị Firestore từ chối tại bước: "+stage+". Đây chưa phải kết luận số điện thoại bị trùng. Cần đối chiếu Rules đang Publish với Rules trong GitHub."
-        : errorText(e,stage));
+      const message = e?.code === "permission-denied"
+        ? "FIREBASE TỪ CHỐI QUYỀN TRUY CẬP tại bước: "+stage+". Đây là lỗi phân quyền, không phải thông báo trùng số điện thoại. Vui lòng báo Admin kiểm tra Firestore Rules."
+        : (e?.message || errorText(e,stage));
+      showRegistrationError(message);
     }
     finally{b.disabled=false;b.textContent="Đăng ký khách hàng và dự án";}
   }
