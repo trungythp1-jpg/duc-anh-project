@@ -15,3 +15,82 @@ footer{text-align:center;color:#a2ada6;font-size:9px;letter-spacing:1.3px;margin
 
 .business-module{margin-top:22px}.module-nav{display:flex;flex-wrap:wrap;gap:7px;margin:22px 0 14px}.module-nav button{border:1px solid #e1e8e2;background:#fff;color:#52665b;border-radius:9px;padding:10px 12px;font:inherit;font-size:11px;font-weight:600;cursor:pointer}.module-nav button.active{background:#17483b;color:#fff;border-color:#17483b}.module-view{border:1px solid #e3eae5;border-radius:14px;padding:20px;margin-top:16px}.module-view h3{font-size:20px;color:#17362d;margin:0 0 12px}.module-view h4{font-size:12px;letter-spacing:.5px;color:#927b43;margin:18px 0 14px;padding-top:14px;border-top:1px solid #edf0ed}.helper{font-size:11px;line-height:1.7;color:#75837b;margin:10px 0 18px}.business-form{display:flex;flex-direction:column}.business-form input,.business-form select,.search-input{width:100%;height:44px;border:1px solid #dce4de;border-radius:9px;padding:0 12px;font:inherit;font-size:12px;background:#fbfcfb;margin:0 0 14px}.business-form label{margin:0 0 7px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid>div{min-width:0}.table-wrap{width:100%;overflow:auto;margin:14px 0}.table-wrap table{border-collapse:collapse;width:100%;min-width:650px;font-size:11px}.table-wrap th,.table-wrap td{padding:12px 10px;text-align:left;border-bottom:1px solid #edf0ed;vertical-align:top}.table-wrap th{color:#718077;font-weight:700;background:#f8faf8}.table-wrap td{color:#40544a}.table-wrap small{display:block;color:#87948d;margin-top:4px}.empty-cell{text-align:center!important;color:#89958e!important;padding:28px!important}.table-action{border:1px solid #e0e7e1;border-radius:7px;background:#fff;padding:6px 8px;color:#8a5a44;font:inherit;font-size:10px;cursor:pointer}.module-view .primary-btn{width:100%}
 @media(max-width:760px){.module-view{padding:14px}.form-grid{grid-template-columns:1fr}.module-nav button{flex:1 1 40%}.table-wrap{margin-left:-4px;width:calc(100% + 8px)}}
+
+
+/* === Responsive layout: brand banner above the application === */
+.shell{
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  max-width:none;
+  min-height:100vh;
+  margin:0;
+}
+.brand-panel{
+  width:100%;
+  min-height:250px;
+  padding:30px clamp(24px,6vw,76px) 34px;
+  justify-content:center;
+}
+.brand-panel:after{
+  width:420px;
+  height:420px;
+  right:5%;
+  bottom:-330px;
+}
+.brand-mark{margin-bottom:18px}
+.brand-panel .eyebrow{margin-bottom:8px}
+.brand-panel h1{font-size:clamp(30px,4vw,46px);line-height:1.02}
+.brand-copy{max-width:620px;margin-top:12px;font-size:13px;line-height:1.65}
+.brand-foot{right:clamp(24px,6vw,76px);bottom:24px}
+.content-panel{
+  width:100%;
+  min-height:0;
+  padding:34px clamp(20px,5vw,72px) 28px;
+  justify-content:flex-start;
+}
+.topline{margin-bottom:34px}
+.auth-card,.app-card{width:100%;max-width:1100px}
+.stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.module-nav{align-items:center}
+.module-view{min-width:0}
+.business-form input,.business-form select,.search-input{max-width:100%}
+footer{margin-top:44px}
+
+@media(max-width:760px){
+  .brand-panel{
+    min-height:0;
+    padding:24px 22px 26px;
+  }
+  .brand-mark{width:42px;height:42px;border-radius:12px;margin-bottom:13px;font-size:16px}
+  .brand-panel .eyebrow{font-size:9px;letter-spacing:1.5px;margin-bottom:7px}
+  .brand-panel h1{font-size:32px;letter-spacing:-1.5px}
+  .brand-copy{font-size:11px;line-height:1.55;margin-top:9px;max-width:330px}
+  .brand-foot{display:none}
+  .content-panel{padding:25px 16px 22px}
+  .topline{margin-bottom:28px;font-size:9px}
+  .auth-card,.app-card{max-width:none}
+  .user-line{align-items:flex-start}
+  .user-line h2{font-size:24px}
+  .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .stat-card{padding:12px;min-height:94px}
+  .stat-card:last-child:nth-child(odd){grid-column:1/-1}
+  .module-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .module-nav button{min-width:0;min-height:42px;padding:9px 8px;font-size:10px}
+  .module-view{padding:14px 12px;border-radius:12px}
+  .module-view h3{font-size:18px}
+  .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .business-form input,.business-form select,.search-input{font-size:12px;min-width:0}
+  .table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  footer{margin-top:34px}
+}
+@media(max-width:390px){
+  .brand-panel{padding:20px 18px 22px}
+  .brand-panel h1{font-size:29px}
+  .content-panel{padding-left:13px;padding-right:13px}
+  .form-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .stat-card{padding:10px}
+  .stat-card span,.stat-card small{font-size:9px}
+  .module-nav button{font-size:9px}
+}
