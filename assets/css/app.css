@@ -225,9 +225,12 @@ html, body { width:100%; max-width:100%; overflow-x:hidden; }
 .admin-setup>summary:after{content:"＋";font-size:17px;color:#a58b4c}
 .admin-setup[open]>summary:after{content:"−"}
 .admin-setup>summary span{font-size:9px;letter-spacing:.5px;color:#8a7137;background:#f5efdf;border-radius:20px;padding:6px 8px;white-space:nowrap}
-.admin-setup #admin-tools{display:block!important;margin:0;border:0;border-top:1px solid #e7ece7;border-radius:0;padding:16px;background:#fff}
+
 .list-pager{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0 14px;color:#77867d;font-size:11px}
 .list-pager>div{display:flex;gap:6px}
 .list-pager button{border:1px solid #dce5de;border-radius:7px;background:#fff;color:#315344;padding:7px 11px;font:inherit;font-size:11px;cursor:pointer}
 .list-pager button:disabled{opacity:.35;cursor:default}
-@media(max-width:760px){.admin-setup>summary{padding:12px;font-size:11px}.admin-setup #admin-tools{padding:13px 11px}.list-pager button{padding:7px 9px}}
+@media(max-width:760px){.admin-setup>summary{padding:12px;font-size:11px}.admin-setup .admin-tools{padding:13px 11px}.list-pager button{padding:7px 9px}}
+
+.admin-setup[hidden]{display:none!important}
+.admin-setup:not([open])>.admin-tools{display:none!important}
