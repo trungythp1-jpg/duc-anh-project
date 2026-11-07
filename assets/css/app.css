@@ -191,3 +191,9 @@ html, body { width:100%; max-width:100%; overflow-x:hidden; }
 .table-action-danger:hover{background:#ffe9e7}
 #delete-requests-table .table-action{margin:2px 2px 2px 0;white-space:nowrap}
 @media(max-width:760px){.admin-operations{padding:13px 10px}.admin-operations .section-heading h3{font-size:15px}}
+
+
+/* Remember login option */
+.remember-login{display:flex;align-items:center;gap:9px;margin:0 0 18px;color:#52665b;font-size:12px;font-weight:500;cursor:pointer}
+.remember-login input{width:17px;height:17px;flex:0 0 17px;margin:0;accent-color:#17483b;cursor:pointer}
+.remember-login span{line-height:1.5}
