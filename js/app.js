@@ -143,8 +143,10 @@ loginForm.addEventListener("submit", async (event) => {
 
 document.querySelector("#logout-btn").addEventListener("click", async () => {
   const user=auth.currentUser;
-  if(user&&activeSessionId){try{await runTransaction(db,async tx=>{const ref=sessionRefFor(user.uid);const snap=await tx.get(ref);if(snap.exists()&&snap.data().sessionId===activeSessionId)tx.delete(ref);});}catch{}}
-  stopSessionWatch(); await signOut(auth);
+  const sessionId=activeSessionId;
+  stopSessionWatch();
+  if(user&&sessionId){try{await runTransaction(db,async tx=>{const ref=sessionRefFor(user.uid);const snap=await tx.get(ref);if(snap.exists()&&snap.data().sessionId===sessionId)tx.delete(ref);});}catch{}}
+  await signOut(auth);
 });
 document.querySelector("#change-password-toggle").addEventListener("click",()=>document.querySelector("#change-password-form").classList.toggle("hidden"));
 document.querySelector("#change-password-form").addEventListener("submit",async event=>{
