@@ -234,3 +234,5 @@ html, body { width:100%; max-width:100%; overflow-x:hidden; }
 
 .admin-setup[hidden]{display:none!important}
 .admin-setup:not([open])>.admin-tools{display:none!important}
+
+.admin-operations.hidden{display:none!important}
