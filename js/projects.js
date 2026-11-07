@@ -182,30 +182,50 @@ export function initProjectModule({db,user,profile}) {
     body.querySelectorAll("[data-approve-delete]").forEach(b=>b.addEventListener("click",()=>reviewDeleteRequest(b.dataset.approveDelete,true)));
     body.querySelectorAll("[data-reject-delete]").forEach(b=>b.addEventListener("click",()=>reviewDeleteRequest(b.dataset.rejectDelete,false)));
   }
+  async function removeProjectInTransaction(tx, projectId, reason, requestedBy) {
+    const projectRef=doc(db,"projects",projectId);
+    const projectSnap=await tx.get(projectRef);
+    if(!projectSnap.exists())throw new Error("Không tìm thấy dự án cần xóa.");
+    const projectData=projectSnap.data();
+    const customerRef=doc(db,"customers",projectData.customerId);
+    const customerSnap=await tx.get(customerRef);
+    const related=await tx.get(query(collection(db,"projects"),where("customerId","==",projectData.customerId)));
+    const hasOther=related.docs.some(d=>d.id!==projectId);
+    const addressRef=projectData.addressLockId?doc(db,"project_address_locks",projectData.addressLockId):null;
+    const addressSnap=addressRef?await tx.get(addressRef):null;
+    const phoneIds=customerSnap.exists()?[...new Set([...(customerSnap.data().normalizedPhones||[]),customerSnap.data().normalizedPhone].filter(Boolean))]:[];
+    const phoneRefs=phoneIds.map(phone=>doc(db,"customer_phone_locks",phone));
+    const phoneSnaps=await Promise.all(phoneRefs.map(ref=>tx.get(ref)));
+    tx.delete(projectRef);
+    if(addressRef&&addressSnap?.exists()&&addressSnap.data().projectId===projectId)tx.delete(addressRef);
+    if(!hasOther&&customerSnap.exists()){
+      tx.delete(customerRef);
+      phoneRefs.forEach((ref,i)=>{if(phoneSnaps[i].exists()&&phoneSnaps[i].data().customerId===projectData.customerId)tx.delete(ref);});
+    }
+    tx.set(doc(collection(db,"project_history")),{customerId:projectData.customerId||null,projectId,projectName:projectData.projectName||"",action:"project_deleted",actorUid:user.uid,actorRole:"admin",requestedBy:requestedBy||user.uid,reason:reason||"Không ghi lý do",customerDeleted:!hasOther,createdAt:serverTimestamp()});
+  }
   async function reviewDeleteRequest(id,approved){
     if(!admin)return;
     const request=deleteRequests.find(r=>r.id===id);if(!request)return;
-    const action=approved?"duyệt yêu cầu và đưa dự án vào lưu trữ":"từ chối yêu cầu";
-    if(!confirm("Bạn có chắc muốn "+action+"? Dữ liệu sẽ được giữ trong lịch sử, không xóa vĩnh viễn."))return;
+    if(!confirm(approved?"Xác nhận xóa dự án, giải phóng khóa địa chỉ và khóa số điện thoại nếu khách hàng không còn dự án khác? Nhật ký xử lý vẫn được giữ.":"Từ chối yêu cầu xóa và giữ nguyên hồ sơ?"))return;
     try{
       await runTransaction(db,async tx=>{
-        const requestRef=doc(db,"project_delete_requests",id),requestSnap=await tx.get(requestRef);
+        const requestRef=doc(db,"project_delete_requests",id);
+        const requestSnap=await tx.get(requestRef);
         if(!requestSnap.exists()||requestSnap.data().status!=="pending")throw new Error("Yêu cầu đã được xử lý hoặc không còn tồn tại.");
         const data=requestSnap.data();
-        if(approved){
-          const projectRef=doc(db,"projects",data.projectId),projectSnap=await tx.get(projectRef);
-          if(!projectSnap.exists())throw new Error("Không tìm thấy dự án cần xử lý.");
-          if(projectSnap.data().status!=="archived")tx.update(projectRef,{status:"archived",archivedAt:serverTimestamp(),archivedBy:user.uid,updatedAt:serverTimestamp()});
-        }
+        if(approved)await removeProjectInTransaction(tx,data.projectId,data.reason,data.requestedBy);
         tx.update(requestRef,{status:approved?"approved":"rejected",reviewedBy:user.uid,reviewedAt:serverTimestamp()});
       });
-      say(approved?"Đã duyệt. Dự án được chuyển vào lưu trữ và giữ nguyên lịch sử.":"Đã từ chối yêu cầu xóa.",true);await load();
-    }catch(e){say(errorText(e,"duyệt yêu cầu xóa"));}
+      say(approved?"Đã xóa hồ sơ và giải phóng khóa liên quan. Nhật ký kiểm soát vẫn được giữ.":"Đã từ chối yêu cầu xóa. Hồ sơ được giữ nguyên.",true);await load();
+    }catch(e){say(errorText(e,"xóa hồ sơ và giải phóng khóa chống trùng"));}
   }
   async function archive(id){
-    if(!admin||!confirm("Xóa/lưu hồ sơ dự án này? Dữ liệu được giữ trong lịch sử, không xóa vĩnh viễn."))return;
-    try{await updateDoc(doc(db,"projects",id),{status:"archived",archivedAt:serverTimestamp(),archivedBy:user.uid,updatedAt:serverTimestamp()});say("Đã chuyển dự án vào lưu trữ. Dữ liệu vẫn được giữ trong hệ thống.",true);await load();}
-    catch(e){say(errorText(e));}
+    if(!admin||!confirm("Xóa toàn bộ hồ sơ dự án này và giải phóng khóa chống trùng? Nhật ký kiểm soát vẫn được giữ."))return;
+    try{
+      await runTransaction(db,async tx=>{await removeProjectInTransaction(tx,id,"Admin chủ động xóa hồ sơ nhập sai",user.uid);});
+      say("Đã xóa hồ sơ dự án và giải phóng khóa liên quan. Nhật ký kiểm soát vẫn được giữ.",true);await load();
+    }catch(e){say(errorText(e,"xóa hồ sơ và giải phóng khóa chống trùng"));}
   }
   function errorText(e,stage="thao tác dữ liệu"){
     if(e?.code==="permission-denied"){
