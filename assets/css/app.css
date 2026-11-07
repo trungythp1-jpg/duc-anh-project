@@ -17,7 +17,7 @@ footer{text-align:center;color:#a2ada6;font-size:9px;letter-spacing:1.3px;margin
 @media(max-width:760px){.module-view{padding:14px}.form-grid{grid-template-columns:1fr}.module-nav button{flex:1 1 40%}.table-wrap{margin-left:-4px;width:calc(100% + 8px)}}
 
 
-/* === Responsive layout: brand banner above the application === */
+
 .shell{
   display:flex;
   flex-direction:column;
@@ -96,7 +96,7 @@ footer{margin-top:44px}
 }
 
 
-/* FINAL OVERRIDE — stacked banner layout on desktop, iPad and iPhone */
+
 html, body { width:100%; max-width:100%; overflow-x:hidden; }
 .shell {
   display:flex !important;
@@ -153,7 +153,7 @@ html, body { width:100%; max-width:100%; overflow-x:hidden; }
   .shell .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 
-/* Admin employee directory */
+
 .employee-directory{width:100%;max-width:1100px;margin:22px auto 0;padding:20px;border:1px solid #e3eae5;border-radius:14px;background:#fff}
 .employee-directory .section-heading{margin-bottom:4px}
 .employee-directory .search-input{width:100%;margin:0 0 8px}
@@ -165,7 +165,7 @@ html, body { width:100%; max-width:100%; overflow-x:hidden; }
 .employee-table td strong{color:#244638}
 @media(max-width:760px){.employee-directory{padding:14px 12px;border-radius:12px}.employee-directory .section-heading h3{font-size:16px}.employee-directory .table-wrap{margin-left:-2px;width:calc(100% + 4px)}}
 
-/* Registration errors: prominent and anchored directly below submit button */
+
 .registration-error{
   margin:14px 0 0;padding:18px 20px;border:2px solid #c83f32;border-left-width:8px;
   border-radius:12px;background:#fff0ee;color:#a52720;font-size:17px;line-height:1.55;
@@ -184,7 +184,7 @@ html, body { width:100%; max-width:100%; overflow-x:hidden; }
 @media(max-width:760px){.registration-error{font-size:16px;padding:17px}}
 
 
-/* Project archive and deletion-request controls */
+
 .admin-operations{margin:22px 0 16px;padding:18px;border:1px solid #e5e9e5;border-radius:12px;background:#fafcf9}
 .admin-operations .section-heading h3{font-size:17px}
 .table-action-danger{border-color:#e6b7b2;background:#fff5f4;color:#a5221b;font-weight:700}
@@ -193,13 +193,13 @@ html, body { width:100%; max-width:100%; overflow-x:hidden; }
 @media(max-width:760px){.admin-operations{padding:13px 10px}.admin-operations .section-heading h3{font-size:15px}}
 
 
-/* Remember login option */
+
 .remember-login{display:flex;align-items:center;gap:9px;margin:0 0 18px;color:#52665b;font-size:12px;font-weight:500;cursor:pointer}
 .remember-login input{width:17px;height:17px;flex:0 0 17px;margin:0;accent-color:#17483b;cursor:pointer}
 .remember-login span{line-height:1.5}
 
 
-/* Compact admin dashboard and mobile brand banner */
+
 .shell > .brand-panel{min-height:190px;padding-top:22px;padding-bottom:24px}
 .shell > .content-panel{padding-top:24px;padding-bottom:20px}
 .shell .topline{margin-bottom:22px}
