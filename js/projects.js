@@ -54,6 +54,7 @@ export function initProjectModule({db,user,profile}) {
   $("#project-filter").addEventListener("input",()=>{pageState.projects=1;renderProjects($("#project-filter").value);});
   $("#refresh-business").addEventListener("click",load);
   if(admin) $("#admin-operations")?.classList.remove("hidden");
+  else $("#admin-operations")?.classList.add("hidden");
   view("register");load();
 
 
@@ -66,22 +67,48 @@ export function initProjectModule({db,user,profile}) {
     el.querySelector('[data-page="next"]')?.addEventListener("click",()=>onPage(current+1));
   }
   async function fetchRows(name){
-    const c=collection(db,name), q=owner?query(c,where("ownerSaleUid","==",owner),limit(500)):query(c,limit(800));
-    const s=await getDocs(q);return s.docs.map(d=>({id:d.id,...d.data()}));
+    const c=collection(db,name);
+    const q=owner?query(c,where("ownerSaleUid","==",owner),limit(500)):query(c,limit(800));
+    try{
+      const snapshot=await getDocs(q);
+      return snapshot.docs.map(d=>({id:d.id,...d.data()}));
+    }catch(error){
+      error.dataCollection=name;
+      throw error;
+    }
   }
   async function load(){
+    say("");
     try{
-      [customers,projects]=await Promise.all([fetchRows("customers"),fetchRows("projects")]);
-      if(admin){
+      customers=await fetchRows("customers");
+      renderCustomers();
+      $("#stat-customers").textContent=customers.filter(x=>x.status!=="archived").length;
+      fillCustomerOptions();
+    }catch(error){
+      say(errorText(error,"đọc danh sách khách hàng"));
+      return;
+    }
+    try{
+      projects=await fetchRows("projects");
+      renderProjects();
+      $("#stat-projects").textContent=projects.filter(x=>x.status!=="archived").length;
+      $("#stat-expiring").textContent=projects.filter(x=>expiryOf(x)&&expiryOf(x).getTime()<Date.now()+5*86400000&&x.status!=="signed"&&x.status!=="archived").length;
+    }catch(error){
+      $("#stat-projects").textContent="—";
+      $("#stat-expiring").textContent="—";
+      say(errorText(error,"đọc danh sách dự án"));
+      return;
+    }
+    if(admin){
+      try{
         const requestSnap=await getDocs(query(collection(db,"project_delete_requests"),limit(300)));
         deleteRequests=requestSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
         renderDeleteRequests();
+      }catch(error){
+        say(errorText(error,"đọc yêu cầu xóa dự án"));
       }
-      $("#stat-customers").textContent=customers.filter(x=>x.status!=="archived").length;
-      $("#stat-projects").textContent=projects.filter(x=>x.status!=="archived").length;
-      $("#stat-expiring").textContent=projects.filter(x=>expiryOf(x)&&expiryOf(x).getTime()<Date.now()+5*86400000&&x.status!=="signed"&&x.status!=="archived").length;
-      renderCustomers();renderProjects();fillCustomerOptions();
-    }catch(e){say(errorText(e));}
+    }
+    if(msg.textContent==="") say("",true);
   }
   function renderCustomers(term=""){
     const q=norm(term), all=customers.filter(c=>norm([c.name,c.phone,c.contactAddress,c.ownerSaleName].join(" ")).includes(q));
