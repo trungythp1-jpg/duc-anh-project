@@ -36,7 +36,7 @@ export function initProjectModule({db,user,profile}) {
     registrationError.classList.toggle("is-duplicate",/trùng|đã có dự án|Sale khác|đã được/i.test(t));
     if(t) requestAnimationFrame(()=>registrationError.scrollIntoView?.({behavior:"smooth",block:"center"}));
   };
-  let customers=[],projects=[];
+  let customers=[],projects=[],deleteRequests=[];
   const nav=[...root.querySelectorAll("[data-view]")];
   function view(name){root.querySelectorAll(".module-view").forEach(x=>x.classList.toggle("hidden",x.id!=="view-"+name));nav.forEach(x=>x.classList.toggle("active",x.dataset.view===name));if(name==="customers")load();if(name==="projects")load();}
   nav.forEach(b=>b.addEventListener("click",()=>view(b.dataset.view)));
@@ -63,6 +63,11 @@ export function initProjectModule({db,user,profile}) {
   async function load(){
     try{
       [customers,projects]=await Promise.all([fetchRows("customers"),fetchRows("projects")]);
+      if(admin){
+        const requestSnap=await getDocs(query(collection(db,"project_delete_requests"),limit(300)));
+        deleteRequests=requestSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+        renderDeleteRequests();
+      }
       $("#stat-customers").textContent=customers.filter(x=>x.status!=="archived").length;
       $("#stat-projects").textContent=projects.filter(x=>x.status!=="archived").length;
       $("#stat-expiring").textContent=projects.filter(x=>expiryOf(x)&&expiryOf(x).getTime()<Date.now()+5*86400000&&x.status!=="signed"&&x.status!=="archived").length;
@@ -75,8 +80,9 @@ export function initProjectModule({db,user,profile}) {
   }
   function renderProjects(term=""){
     const q=norm(term), rows=projects.filter(p=>norm([p.projectName,p.customerName,p.siteAddress,p.provinceCity].join(" ")).includes(q));
-    $("#projects-table").innerHTML=rows.length?rows.map(p=>"<tr><td><b>"+esc(p.projectName)+"</b><small>"+esc(p.customerName||"")+"</small></td><td>"+esc(p.siteAddress)+"</td><td>"+esc(p.capacityKg)+" kg · "+esc(p.stops)+" điểm dừng</td><td>"+esc(statusName(p.status))+"</td><td>"+dateName(expiryOf(p))+"</td><td>"+(admin&&p.status!=="archived"?'<button class="table-action" data-archive="'+esc(p.id)+'">Lưu trữ</button>':"—")+"</td></tr>").join(""):'<tr><td colspan="6" class="empty-cell">Chưa có dự án</td></tr>';
+    $("#projects-table").innerHTML=rows.length?rows.map(p=>"<tr><td><b>"+esc(p.projectName)+"</b><small>"+esc(p.customerName||"")+"</small></td><td>"+esc(p.siteAddress)+"</td><td>"+esc(p.capacityKg)+" kg · "+esc(p.stops)+" điểm dừng</td><td>"+esc(statusName(p.status))+"</td><td>"+dateName(expiryOf(p))+"</td><td>"+(p.status==="archived"?"<span class='employee-status is-inactive'>Đã lưu trữ</span>":admin?'<button class="table-action table-action-danger" data-archive="'+esc(p.id)+'">Xóa / lưu hồ sơ</button>':'<button class="table-action" data-request-delete="'+esc(p.id)+'">Yêu cầu xóa</button>')+"</td></tr>").join(""):'<tr><td colspan="6" class="empty-cell">Chưa có dự án</td></tr>';
     $("#projects-table").querySelectorAll("[data-archive]").forEach(b=>b.addEventListener("click",()=>archive(b.dataset.archive)));
+    $("#projects-table").querySelectorAll("[data-request-delete]").forEach(b=>b.addEventListener("click",()=>requestDelete(b.dataset.requestDelete)));
   }
   function fillCustomerOptions(){
     const s=$("#project-customer-select");if(!s)return;
@@ -152,9 +158,53 @@ export function initProjectModule({db,user,profile}) {
     }
     finally{b.disabled=false;b.textContent="Đăng ký khách hàng và dự án";}
   }
+  async function requestDelete(id){
+    const project=projects.find(p=>p.id===id);
+    if(!project||admin)return;
+    const reason=prompt("Lý do đề nghị xóa/lưu hồ sơ dự án (ví dụ: nhập sai thông tin):","Nhập sai thông tin dự án");
+    if(reason===null)return;
+    try{
+      const requestRef=doc(collection(db,"project_delete_requests"));
+      await runTransaction(db,async tx=>{
+        const projectSnap=await tx.get(doc(db,"projects",id));
+        if(!projectSnap.exists())throw new Error("Dự án không còn tồn tại.");
+        if(projectSnap.data().ownerSaleUid!==user.uid)throw new Error("Bạn chỉ có thể gửi yêu cầu với dự án do mình phụ trách.");
+        if(projectSnap.data().status==="archived")throw new Error("Dự án đã được lưu trữ.");
+        tx.set(requestRef,{projectId:id,projectName:project.projectName||"",customerName:project.customerName||"",ownerSaleUid:user.uid,ownerSaleName:project.ownerSaleName||profile.displayName||"",requestedBy:user.uid,requesterRole:"sale",reason:reason.trim(),status:"pending",createdAt:serverTimestamp()});
+      });
+      say("Đã gửi yêu cầu xóa dự án đến Admin.",true);await load();
+    }catch(e){say(errorText(e,"gửi yêu cầu xóa dự án"));}
+  }
+  function renderDeleteRequests(){
+    const body=$("#delete-requests-table");if(!body)return;
+    const rows=deleteRequests.filter(r=>r.status==="pending");
+    body.innerHTML=rows.length?rows.map(r=>"<tr><td><b>"+esc(r.projectName||"Dự án")+"</b><small>"+esc(r.customerName||"")+"</small></td><td>"+esc(r.ownerSaleName||r.ownerSaleUid||"—")+"</td><td>"+esc(r.reason||"Không ghi lý do")+"</td><td>"+dateName(r.createdAt)+"</td><td><button class='table-action table-action-danger' data-approve-delete='"+esc(r.id)+"'>Duyệt xóa</button> <button class='table-action' data-reject-delete='"+esc(r.id)+"'>Từ chối</button></td></tr>").join(""):'<tr><td colspan="5" class="empty-cell">Không có yêu cầu xóa đang chờ.</td></tr>';
+    body.querySelectorAll("[data-approve-delete]").forEach(b=>b.addEventListener("click",()=>reviewDeleteRequest(b.dataset.approveDelete,true)));
+    body.querySelectorAll("[data-reject-delete]").forEach(b=>b.addEventListener("click",()=>reviewDeleteRequest(b.dataset.rejectDelete,false)));
+  }
+  async function reviewDeleteRequest(id,approved){
+    if(!admin)return;
+    const request=deleteRequests.find(r=>r.id===id);if(!request)return;
+    const action=approved?"duyệt yêu cầu và đưa dự án vào lưu trữ":"từ chối yêu cầu";
+    if(!confirm("Bạn có chắc muốn "+action+"? Dữ liệu sẽ được giữ trong lịch sử, không xóa vĩnh viễn."))return;
+    try{
+      await runTransaction(db,async tx=>{
+        const requestRef=doc(db,"project_delete_requests",id),requestSnap=await tx.get(requestRef);
+        if(!requestSnap.exists()||requestSnap.data().status!=="pending")throw new Error("Yêu cầu đã được xử lý hoặc không còn tồn tại.");
+        const data=requestSnap.data();
+        if(approved){
+          const projectRef=doc(db,"projects",data.projectId),projectSnap=await tx.get(projectRef);
+          if(!projectSnap.exists())throw new Error("Không tìm thấy dự án cần xử lý.");
+          if(projectSnap.data().status!=="archived")tx.update(projectRef,{status:"archived",archivedAt:serverTimestamp(),archivedBy:user.uid,updatedAt:serverTimestamp()});
+        }
+        tx.update(requestRef,{status:approved?"approved":"rejected",reviewedBy:user.uid,reviewedAt:serverTimestamp()});
+      });
+      say(approved?"Đã duyệt. Dự án được chuyển vào lưu trữ và giữ nguyên lịch sử.":"Đã từ chối yêu cầu xóa.",true);await load();
+    }catch(e){say(errorText(e,"duyệt yêu cầu xóa"));}
+  }
   async function archive(id){
-    if(!admin||!confirm("Đưa dự án vào lưu trữ? Dữ liệu không bị xóa vĩnh viễn."))return;
-    try{await updateDoc(doc(db,"projects",id),{status:"archived",archivedAt:serverTimestamp(),archivedBy:user.uid,updatedAt:serverTimestamp()});say("Đã lưu trữ dự án.",true);await load();}
+    if(!admin||!confirm("Xóa/lưu hồ sơ dự án này? Dữ liệu được giữ trong lịch sử, không xóa vĩnh viễn."))return;
+    try{await updateDoc(doc(db,"projects",id),{status:"archived",archivedAt:serverTimestamp(),archivedBy:user.uid,updatedAt:serverTimestamp()});say("Đã chuyển dự án vào lưu trữ. Dữ liệu vẫn được giữ trong hệ thống.",true);await load();}
     catch(e){say(errorText(e));}
   }
   function errorText(e,stage="thao tác dữ liệu"){
