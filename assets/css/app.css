@@ -236,3 +236,5 @@ html, body { width:100%; max-width:100%; overflow-x:hidden; }
 .admin-setup:not([open])>.admin-tools{display:none!important}
 
 .admin-operations.hidden{display:none!important}
+
+.account-actions{display:flex;gap:8px;align-items:center}.account-form{margin:14px 0;padding:16px;border:1px solid #e3eae5;border-radius:12px;background:#fbfcfa}.account-form h3{margin:0 0 12px}.account-form label{display:block;margin:10px 0 6px}.account-form input{width:100%;box-sizing:border-box}#session-message{margin:8px 0}
