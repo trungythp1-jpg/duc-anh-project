@@ -197,3 +197,24 @@ html, body { width:100%; max-width:100%; overflow-x:hidden; }
 .remember-login{display:flex;align-items:center;gap:9px;margin:0 0 18px;color:#52665b;font-size:12px;font-weight:500;cursor:pointer}
 .remember-login input{width:17px;height:17px;flex:0 0 17px;margin:0;accent-color:#17483b;cursor:pointer}
 .remember-login span{line-height:1.5}
+
+
+/* Compact admin dashboard and mobile brand banner */
+.shell > .brand-panel{min-height:190px;padding-top:22px;padding-bottom:24px}
+.shell > .content-panel{padding-top:24px;padding-bottom:20px}
+.shell .topline{margin-bottom:22px}
+.shell .role-chip{margin-bottom:14px}
+.shell .admin-tools,.shell .employee-directory{margin-top:16px}
+.shell footer{margin-top:24px}
+@media(max-width:760px){
+  .shell > .brand-panel{min-height:0;padding:17px 20px 19px}
+  .shell .brand-mark{width:38px;height:38px;margin-bottom:9px;font-size:15px}
+  .shell .brand-panel .eyebrow{margin-bottom:5px}
+  .shell .brand-panel h1{font-size:29px;line-height:1}
+  .shell .brand-copy{font-size:10px;line-height:1.45;margin-top:7px}
+  .shell > .content-panel{padding:18px 15px 18px}
+  .shell .topline{margin-bottom:17px}
+  .shell .role-chip{margin-bottom:10px}
+  .shell .admin-tools,.shell .employee-directory{margin-top:13px}
+  .shell footer{margin-top:20px}
+}
