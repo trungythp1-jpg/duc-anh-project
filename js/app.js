@@ -1,7 +1,7 @@
 import { auth, db } from "./firebase.js";
 import { initProjectModule } from "./projects.js?v=20261107-2";
 import {
-  onAuthStateChanged, signInWithEmailAndPassword, signOut
+  onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 import {
   collection, doc, getDoc, getDocs, runTransaction, serverTimestamp
@@ -114,7 +114,9 @@ loginForm.addEventListener("submit", async (event) => {
   submitButton.textContent = "Đang đăng nhập…";
   const email = document.querySelector("#email").value.trim();
   const password = document.querySelector("#password").value;
+  const rememberLogin = document.querySelector("#remember-login").checked;
   try {
+    await setPersistence(auth, rememberLogin ? browserLocalPersistence : browserSessionPersistence);
     await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
     showLogin(friendlyError(error));
