@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#123b32">
   <meta name="description" content="ĐỨC ANH PROJECT - Quản lý khách hàng và dự án thang máy.">
   <title>ĐỨC ANH PROJECT</title>
-  <link rel="stylesheet" href="./assets/css/app.css?v=20261107-2">
+  <link rel="stylesheet" href="./assets/css/app.css?v=20261107-3">
 </head>
 <body>
   <main class="shell">
@@ -39,12 +39,7 @@
           <button id="logout-btn" class="quiet-btn" type="button">Đăng xuất</button>
         </div>
         <div class="role-chip" id="role-chip">ĐANG XÁC MINH QUYỀN</div>
-        <div class="stats-grid">
-          <article class="stat-card"><span>Khách hàng</span><strong>—</strong><small>Chưa kết nối dữ liệu</small></article>
-          <article class="stat-card"><span>Dự án đang phụ trách</span><strong>—</strong><small>Chưa kết nối dữ liệu</small></article>
-          <article class="stat-card"><span>Yêu cầu chuyển Sale</span><strong>—</strong><small>Chưa kết nối dữ liệu</small></article>
-        </div>
-        <section id="admin-tools" class="admin-tools hidden">
+                <section id="admin-tools" class="admin-tools hidden">
           <div class="section-heading">
             <div><p class="eyebrow">ADMINISTRATION</p><h3>Tạo hồ sơ nhân viên Sale</h3></div>
             <span class="admin-tag">ADMIN ONLY</span>
@@ -92,7 +87,6 @@
 <section id="view-projects" class="module-view hidden"><h3>Danh sách dự án</h3><input id="project-filter" class="search-input" placeholder="Tìm dự án, khách hàng, địa chỉ…"><div class="table-wrap"><table><thead><tr><th>Dự án / Khách hàng</th><th>Địa chỉ</th><th>Nhu cầu thang</th><th>Trạng thái</th><th>Hạn giữ</th><th>Thao tác</th></tr></thead><tbody id="projects-table"></tbody></table></div><section id="admin-operations" class="admin-operations hidden"><div class="section-heading"><div><p class="eyebrow">ADMIN REVIEW</p><h3>Yêu cầu xóa dự án</h3></div><span class="admin-tag">ADMIN ONLY</span></div><p class="helper">Admin kiểm tra yêu cầu từ Sale. Duyệt sẽ xóa hồ sơ dự án và giải phóng khóa chống trùng. Nếu khách hàng không còn dự án nào khác, hồ sơ khách hàng và khóa số điện thoại cũng được xóa. Nhật ký kiểm soát vẫn được giữ.</p><div class="table-wrap"><table><thead><tr><th>Dự án / Khách hàng</th><th>Sale yêu cầu</th><th>Lý do</th><th>Ngày gửi</th><th>Xử lý</th></tr></thead><tbody id="delete-requests-table"><tr><td colspan="5" class="empty-cell">Đang tải…</td></tr></tbody></table></div></section><button id="open-new-project" class="quiet-btn" type="button">＋ Đăng ký dự án mới</button></section>
 <section id="view-customers" class="module-view hidden"><h3>Danh sách khách hàng</h3><input id="customer-filter" class="search-input" placeholder="Tìm khách hàng, số điện thoại…"><div class="table-wrap"><table><thead><tr><th>Khách hàng</th><th>Điện thoại</th><th>Loại</th><th>Sale phụ trách</th><th>Trạng thái</th></tr></thead><tbody id="customers-table"></tbody></table></div></section>
 </section>
-        <div class="notice"><strong>Giai đoạn khởi tạo</strong><p>Các nghiệp vụ khách hàng và dự án sẽ được bật sau khi hoàn tất kiểm thử bảo mật Firestore.</p></div>
         <p id="profile-message" class="message"></p>
       </div>
       <footer>© 2026 THANG MÁY ĐỨC ANH</footer>
