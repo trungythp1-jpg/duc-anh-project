@@ -37,6 +37,8 @@ export function initProjectModule({db,user,profile}) {
     if(t) requestAnimationFrame(()=>registrationError.scrollIntoView?.({behavior:"smooth",block:"center"}));
   };
   let customers=[],projects=[],deleteRequests=[];
+  const pageState={customers:1,projects:1,deleteRequests:1};
+  const PAGE_SIZE=10;
   const nav=[...root.querySelectorAll("[data-view]")];
   function view(name){root.querySelectorAll(".module-view").forEach(x=>x.classList.toggle("hidden",x.id!=="view-"+name));nav.forEach(x=>x.classList.toggle("active",x.dataset.view===name));if(name==="customers")load();if(name==="projects")load();}
   nav.forEach(b=>b.addEventListener("click",()=>view(b.dataset.view)));
@@ -49,13 +51,22 @@ export function initProjectModule({db,user,profile}) {
     other.required=custom;
     if(!custom)other.value="";
   });
-  $("#customer-filter").addEventListener("input",()=>renderCustomers($("#customer-filter").value));
-  $("#project-filter").addEventListener("input",()=>renderProjects($("#project-filter").value));
+  $("#customer-filter").addEventListener("input",()=>{pageState.customers=1;renderCustomers($("#customer-filter").value);});
+  $("#project-filter").addEventListener("input",()=>{pageState.projects=1;renderProjects($("#project-filter").value);});
   $("#refresh-business").addEventListener("click",load);
   // Phần tử admin-operations chưa có trong giao diện hiện tại; kiểm tra tồn tại trước khi thao tác.
   if(admin) $("#admin-operations")?.classList.remove("hidden");
   view("register");load();
 
+
+  function renderPager(id,total,page,onPage){
+    const el=$("#"+id);if(!el)return;
+    const pages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+    const current=Math.min(page,pages);
+    el.innerHTML=total>PAGE_SIZE?'<span>Hiển thị '+((current-1)*PAGE_SIZE+1)+'–'+Math.min(current*PAGE_SIZE,total)+' / '+total+'</span><div><button type="button" data-page="prev" '+(current===1?'disabled':'')+'>‹ Trước</button><button type="button" data-page="next" '+(current===pages?'disabled':'')+'>Sau ›</button></div>':'<span>'+total+' mục</span>';
+    el.querySelector('[data-page="prev"]')?.addEventListener("click",()=>onPage(current-1));
+    el.querySelector('[data-page="next"]')?.addEventListener("click",()=>onPage(current+1));
+  }
   async function fetchRows(name){
     const c=collection(db,name), q=owner?query(c,where("ownerSaleUid","==",owner),limit(500)):query(c,limit(800));
     const s=await getDocs(q);return s.docs.map(d=>({id:d.id,...d.data()}));
@@ -75,12 +86,16 @@ export function initProjectModule({db,user,profile}) {
     }catch(e){say(errorText(e));}
   }
   function renderCustomers(term=""){
-    const q=norm(term), rows=customers.filter(c=>norm([c.name,c.phone,c.contactAddress,c.ownerSaleName].join(" ")).includes(q));
-    $("#customers-table").innerHTML=rows.length?rows.map(c=>"<tr><td><b>"+esc(c.name)+"</b></td><td>"+esc(c.phone)+"</td><td>"+esc(c.customerType||"—")+"</td><td>"+esc(c.ownerSaleName||c.ownerSaleUid||"—")+"</td><td>"+(c.status==="archived"?"Lưu trữ":"Đang hoạt động")+"</td></tr>").join(""):'<tr><td colspan="5" class="empty-cell">Chưa có khách hàng</td></tr>';
+    const q=norm(term), all=customers.filter(c=>norm([c.name,c.phone,c.contactAddress,c.ownerSaleName].join(" ")).includes(q));
+    const rows=all.slice((pageState.customers-1)*PAGE_SIZE,pageState.customers*PAGE_SIZE);
+    $("#customers-table").innerHTML=all.length?rows.map(c=>"<tr><td><b>"+esc(c.name)+"</b></td><td>"+esc(c.phone)+"</td><td>"+esc(c.customerType||"—")+"</td><td>"+esc(c.ownerSaleName||c.ownerSaleUid||"—")+"</td><td>"+(c.status==="archived"?"Lưu trữ":"Đang hoạt động")+"</td></tr>").join(""):'<tr><td colspan="5" class="empty-cell">Chưa có khách hàng</td></tr>';
+    renderPager("customers-pager",all.length,pageState.customers,p=>{pageState.customers=p;renderCustomers(term);});
   }
   function renderProjects(term=""){
-    const q=norm(term), rows=projects.filter(p=>norm([p.projectName,p.customerName,p.siteAddress,p.provinceCity].join(" ")).includes(q));
-    $("#projects-table").innerHTML=rows.length?rows.map(p=>"<tr><td><b>"+esc(p.projectName)+"</b><small>"+esc(p.customerName||"")+"</small></td><td>"+esc(p.siteAddress)+"</td><td>"+esc(p.capacityKg)+" kg · "+esc(p.stops)+" điểm dừng</td><td>"+esc(statusName(p.status))+"</td><td>"+dateName(expiryOf(p))+"</td><td>"+(p.status==="archived"?"<span class='employee-status is-inactive'>Đã lưu trữ</span>":admin?'<button class="table-action table-action-danger" data-archive="'+esc(p.id)+'">Xóa / lưu hồ sơ</button>':'<button class="table-action" data-request-delete="'+esc(p.id)+'">Yêu cầu xóa</button>')+"</td></tr>").join(""):'<tr><td colspan="6" class="empty-cell">Chưa có dự án</td></tr>';
+    const q=norm(term), all=projects.filter(p=>norm([p.projectName,p.customerName,p.siteAddress,p.provinceCity].join(" ")).includes(q));
+    const rows=all.slice((pageState.projects-1)*PAGE_SIZE,pageState.projects*PAGE_SIZE);
+    $("#projects-table").innerHTML=all.length?rows.map(p=>"<tr><td><b>"+esc(p.projectName)+"</b><small>"+esc(p.customerName||"")+"</small></td><td>"+esc(p.siteAddress)+"</td><td>"+esc(p.capacityKg)+" kg · "+esc(p.stops)+" điểm dừng</td><td>"+esc(statusName(p.status))+"</td><td>"+dateName(expiryOf(p))+"</td><td>"+(p.status==="archived"?"<span class='employee-status is-inactive'>Đã lưu trữ</span>":admin?'<button class="table-action table-action-danger" data-archive="'+esc(p.id)+'">Xóa / lưu hồ sơ</button>':'<button class="table-action" data-request-delete="'+esc(p.id)+'">Yêu cầu xóa</button>')+"</td></tr>").join(""):'<tr><td colspan="6" class="empty-cell">Chưa có dự án</td></tr>';
+    renderPager("projects-pager",all.length,pageState.projects,p=>{pageState.projects=p;renderProjects(term);});
     $("#projects-table").querySelectorAll("[data-archive]").forEach(b=>b.addEventListener("click",()=>archive(b.dataset.archive)));
     $("#projects-table").querySelectorAll("[data-request-delete]").forEach(b=>b.addEventListener("click",()=>requestDelete(b.dataset.requestDelete)));
   }
@@ -177,8 +192,10 @@ export function initProjectModule({db,user,profile}) {
   }
   function renderDeleteRequests(){
     const body=$("#delete-requests-table");if(!body)return;
-    const rows=deleteRequests.filter(r=>r.status==="pending");
-    body.innerHTML=rows.length?rows.map(r=>"<tr><td><b>"+esc(r.projectName||"Dự án")+"</b><small>"+esc(r.customerName||"")+"</small></td><td>"+esc(r.ownerSaleName||r.ownerSaleUid||"—")+"</td><td>"+esc(r.reason||"Không ghi lý do")+"</td><td>"+dateName(r.createdAt)+"</td><td><button class='table-action table-action-danger' data-approve-delete='"+esc(r.id)+"'>Duyệt xóa</button> <button class='table-action' data-reject-delete='"+esc(r.id)+"'>Từ chối</button></td></tr>").join(""):'<tr><td colspan="5" class="empty-cell">Không có yêu cầu xóa đang chờ.</td></tr>';
+    const all=deleteRequests.filter(r=>r.status==="pending");
+    const rows=all.slice((pageState.deleteRequests-1)*PAGE_SIZE,pageState.deleteRequests*PAGE_SIZE);
+    body.innerHTML=all.length?rows.map(r=>"<tr><td><b>"+esc(r.projectName||"Dự án")+"</b><small>"+esc(r.customerName||"")+"</small></td><td>"+esc(r.ownerSaleName||r.ownerSaleUid||"—")+"</td><td>"+esc(r.reason||"Không ghi lý do")+"</td><td>"+dateName(r.createdAt)+"</td><td><button class='table-action table-action-danger' data-approve-delete='"+esc(r.id)+"'>Duyệt xóa</button> <button class='table-action' data-reject-delete='"+esc(r.id)+"'>Từ chối</button></td></tr>").join(""):'<tr><td colspan="5" class="empty-cell">Không có yêu cầu xóa đang chờ.</td></tr>';
+    renderPager("delete-requests-pager",all.length,pageState.deleteRequests,p=>{pageState.deleteRequests=p;renderDeleteRequests();});
     body.querySelectorAll("[data-approve-delete]").forEach(b=>b.addEventListener("click",()=>reviewDeleteRequest(b.dataset.approveDelete,true)));
     body.querySelectorAll("[data-reject-delete]").forEach(b=>b.addEventListener("click",()=>reviewDeleteRequest(b.dataset.rejectDelete,false)));
   }
