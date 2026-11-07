@@ -189,7 +189,7 @@ export function initProjectModule({db,user,profile}) {
     const projectData=projectSnap.data();
     const customerRef=doc(db,"customers",projectData.customerId);
     const customerSnap=await tx.get(customerRef);
-    const related=await tx.get(query(collection(db,"projects"),where("customerId","==",projectData.customerId)));
+    const related=await getDocs(query(collection(db,"projects"),where("customerId","==",projectData.customerId)));
     const hasOther=related.docs.some(d=>d.id!==projectId);
     const addressRef=projectData.addressLockId?doc(db,"project_address_locks",projectData.addressLockId):null;
     const addressSnap=addressRef?await tx.get(addressRef):null;
