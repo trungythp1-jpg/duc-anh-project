@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#123b32">
   <meta name="description" content="ĐỨC ANH PROJECT - Quản lý khách hàng và dự án thang máy.">
   <title>ĐỨC ANH PROJECT</title>
-  <link rel="stylesheet" href="./assets/css/app.css?v=20261107-4">
+  <link rel="stylesheet" href="./assets/css/app.css?v=20261107-5">
 </head>
 <body>
   <main class="shell">
@@ -22,7 +22,7 @@
       <div id="login-view" class="auth-card">
         <p class="eyebrow">WELCOME BACK</p>
         <h2>Đăng nhập hệ thống</h2>
-        <p class="muted">Sử dụng tài khoản được Admin cấp.</p>
+        
         <form id="login-form">
           <label for="email">Email</label>
           <input id="email" type="email" autocomplete="username" placeholder="name@company.com" required>
@@ -39,17 +39,17 @@
           <button id="logout-btn" class="quiet-btn" type="button">Đăng xuất</button>
         </div>
         <div class="role-chip" id="role-chip">ĐANG XÁC MINH QUYỀN</div>
-                <details class="admin-setup"><summary>＋ Tạo hồ sơ nhân viên Sale <span>ADMIN ONLY · ÍT SỬ DỤNG</span></summary>
+                <details class="admin-setup"><summary>＋ Tạo hồ sơ nhân viên Sale</summary>
         <section id="admin-tools" class="admin-tools hidden">
-            <span class="admin-tag">ADMIN ONLY</span>
+            
           </div>
-          <p class="helper">Tạo hồ sơ phân quyền cho tài khoản đã được tạo trong Firebase Authentication. Chỉ cần dán UID; tên hiển thị có thể bổ sung nếu muốn.</p>
+          
           <form id="sale-form" class="sale-form">
             <label for="sale-uid">Firebase Auth UID</label>
             <input id="sale-uid" type="text" autocomplete="off" placeholder="Dán UID tài khoản Sale tại đây" required>
             <label for="sale-name">Tên hiển thị (không bắt buộc)</label>
             <input id="sale-name" type="text" autocomplete="name" placeholder="Có thể bổ sung sau">
-            <div class="form-note"><strong>Vai trò:</strong> SALE &nbsp;·&nbsp; <strong>Trạng thái:</strong> Đang hoạt động</div>
+            
             <button id="create-sale-btn" class="primary-btn" type="submit">Tạo hồ sơ Sale <span>＋</span></button>
             <p id="sale-message" class="message" role="status" aria-live="polite"></p>
           </form>
@@ -60,7 +60,7 @@
             <div><p class="eyebrow">TEAM MANAGEMENT</p><h3>Danh sách nhân viên</h3></div>
             <span id="employee-count" class="admin-tag">0 NHÂN SỰ</span>
           </div>
-          <p class="helper">Danh sách tài khoản đã được cấp hồ sơ trong hệ thống Đức Anh Project.</p>
+          
           <input id="employee-filter" class="search-input" type="search" placeholder="Tìm theo tên hoặc UID nhân viên…">
           <div class="table-wrap">
             <table class="employee-table">
@@ -74,7 +74,7 @@
 <nav class="module-nav"><button type="button" data-view="register" class="active">＋ Đăng ký dự án</button><button type="button" data-view="projects">Danh sách dự án</button><button type="button" data-view="customers">Khách hàng</button><button type="button" id="refresh-business">↻ Làm mới</button></nav>
 <div class="stats-grid"><article class="stat-card"><span>Khách hàng</span><strong id="stat-customers">—</strong><small>Đang hoạt động</small></article><article class="stat-card"><span>Dự án</span><strong id="stat-projects">—</strong><small>Chưa lưu trữ</small></article><article class="stat-card"><span>Sắp hết hạn</span><strong id="stat-expiring">—</strong><small>Trong 5 ngày</small></article></div>
 <p id="business-message" class="message" role="status" aria-live="polite"></p>
-<section id="view-register" class="module-view"><p class="eyebrow">NEW REGISTRATION</p><h3>Đăng ký khách hàng & dự án</h3><p class="helper">Một khách hàng chỉ thuộc về một Sale. Hệ thống kiểm tra số điện thoại và địa chỉ công trình trước khi ghi nhận. Tải trọng và số điểm dừng bắt buộc.</p>
+<section id="view-register" class="module-view"><p class="eyebrow">NEW REGISTRATION</p><h3>Đăng ký khách hàng & dự án</h3>
 <form id="register-form" class="business-form">
 <h4>01 · Thông tin khách hàng</h4><label for="reg-customer-name">Tên khách hàng / Chủ đầu tư *</label><input id="reg-customer-name" required placeholder="Họ tên hoặc tên doanh nghiệp">
 <div class="form-grid"><div><label for="reg-phone">Số điện thoại *</label><input id="reg-phone" inputmode="tel" required placeholder="09xxxxxxxx"></div><div><label for="reg-secondary-phone">Số điện thoại phụ</label><input id="reg-secondary-phone" inputmode="tel" placeholder="Không bắt buộc"></div></div>
@@ -84,7 +84,7 @@
 <div class="form-grid"><div><label for="reg-elevator-qty">Số lượng thang dự kiến</label><input id="reg-elevator-qty" type="number" min="1"></div><div><label for="reg-deployment">Thời gian triển khai dự kiến</label><input id="reg-deployment" type="date"></div></div>
 <h4>03 · Nhu cầu thang máy</h4><div class="form-grid"><div><label for="reg-capacity">Tải trọng dự kiến (kg) *</label><select id="reg-capacity" required><option value="">Chọn tải trọng</option><option value="350">350 kg</option><option value="450">450 kg</option><option value="630">630 kg</option><option value="750">750 kg</option><option value="1000">1.000 kg</option><option value="other">Khác</option></select><input id="reg-capacity-other" type="number" min="1" inputmode="numeric" placeholder="Nhập tải trọng (kg)" class="hidden" aria-label="Tải trọng khác"></div><div><label for="reg-stops">Số điểm dừng *</label><input id="reg-stops" type="number" min="1" required></div></div>
 <button class="primary-btn" type="submit">Đăng ký khách hàng và dự án <span>→</span></button><p id="registration-error" class="registration-error hidden" role="alert" aria-live="assertive"></p></form></section>
-<section id="view-projects" class="module-view hidden"><h3>Danh sách dự án</h3><input id="project-filter" class="search-input" placeholder="Tìm dự án, khách hàng, địa chỉ…"><div class="table-wrap"><table><thead><tr><th>Dự án / Khách hàng</th><th>Địa chỉ</th><th>Nhu cầu thang</th><th>Trạng thái</th><th>Hạn giữ</th><th>Thao tác</th></tr></thead><tbody id="projects-table"></tbody></table></div><div id="projects-pager" class="list-pager"></div><section id="admin-operations" class="admin-operations hidden"><div class="section-heading"><div><p class="eyebrow">ADMIN REVIEW</p><h3>Yêu cầu xóa dự án</h3></div><span class="admin-tag">ADMIN ONLY</span></div><p class="helper">Admin kiểm tra yêu cầu từ Sale. Duyệt sẽ xóa hồ sơ dự án và giải phóng khóa chống trùng. Nếu khách hàng không còn dự án nào khác, hồ sơ khách hàng và khóa số điện thoại cũng được xóa. Nhật ký kiểm soát vẫn được giữ.</p><div class="table-wrap"><table><thead><tr><th>Dự án / Khách hàng</th><th>Sale yêu cầu</th><th>Lý do</th><th>Ngày gửi</th><th>Xử lý</th></tr></thead><tbody id="delete-requests-table"><tr><td colspan="5" class="empty-cell">Đang tải…</td></tr></tbody></table></div><div id="delete-requests-pager" class="list-pager"></div></section><button id="open-new-project" class="quiet-btn" type="button">＋ Đăng ký dự án mới</button></section>
+<section id="view-projects" class="module-view hidden"><h3>Danh sách dự án</h3><input id="project-filter" class="search-input" placeholder="Tìm dự án, khách hàng, địa chỉ…"><div class="table-wrap"><table><thead><tr><th>Dự án / Khách hàng</th><th>Địa chỉ</th><th>Nhu cầu thang</th><th>Trạng thái</th><th>Hạn giữ</th><th>Thao tác</th></tr></thead><tbody id="projects-table"></tbody></table></div><div id="projects-pager" class="list-pager"></div><section id="admin-operations" class="admin-operations hidden"><div class="section-heading"><div><p class="eyebrow">ADMIN REVIEW</p><h3>Yêu cầu xóa dự án</h3></div></div><div class="table-wrap"><table><thead><tr><th>Dự án / Khách hàng</th><th>Sale yêu cầu</th><th>Lý do</th><th>Ngày gửi</th><th>Xử lý</th></tr></thead><tbody id="delete-requests-table"><tr><td colspan="5" class="empty-cell">Đang tải…</td></tr></tbody></table></div><div id="delete-requests-pager" class="list-pager"></div></section><button id="open-new-project" class="quiet-btn" type="button">＋ Đăng ký dự án mới</button></section>
 <section id="view-customers" class="module-view hidden"><h3>Danh sách khách hàng</h3><input id="customer-filter" class="search-input" placeholder="Tìm khách hàng, số điện thoại…"><div class="table-wrap"><table><thead><tr><th>Khách hàng</th><th>Điện thoại</th><th>Loại</th><th>Sale phụ trách</th><th>Trạng thái</th></tr></thead><tbody id="customers-table"></tbody></table></div><div id="customers-pager" class="list-pager"></div></section>
 </section>
         <p id="profile-message" class="message"></p>
@@ -92,6 +92,6 @@
       <footer>© 2026 THANG MÁY ĐỨC ANH</footer>
     </section>
   </main>
-  <script type="module" src="./js/app.js?v=20261107-3"></script>
+  <script type="module" src="./js/app.js?v=20261107-4"></script>
 </body>
 </html>
