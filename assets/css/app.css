@@ -182,3 +182,12 @@ html, body { width:100%; max-width:100%; overflow-x:hidden; }
 .registration-error.hidden{display:none!important}
 #business-message.hidden{display:none!important}
 @media(max-width:760px){.registration-error{font-size:16px;padding:17px}}
+
+
+/* Project archive and deletion-request controls */
+.admin-operations{margin:22px 0 16px;padding:18px;border:1px solid #e5e9e5;border-radius:12px;background:#fafcf9}
+.admin-operations .section-heading h3{font-size:17px}
+.table-action-danger{border-color:#e6b7b2;background:#fff5f4;color:#a5221b;font-weight:700}
+.table-action-danger:hover{background:#ffe9e7}
+#delete-requests-table .table-action{margin:2px 2px 2px 0;white-space:nowrap}
+@media(max-width:760px){.admin-operations{padding:13px 10px}.admin-operations .section-heading h3{font-size:15px}}
