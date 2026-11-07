@@ -28,7 +28,6 @@ export function initProjectModule({db,user,profile}) {
   const say=(t,ok=false)=>{msg.textContent=t;msg.className="message"+(ok?" success":"");};
   const registrationError=$("#registration-error");
   const showRegistrationError=(t)=>{
-    // Lỗi đăng ký chỉ hiển thị tại form, không đẩy lên dòng thông báo tổng quan.
     msg.textContent="";
     msg.className="message hidden";
     registrationError.textContent=t;
@@ -54,7 +53,6 @@ export function initProjectModule({db,user,profile}) {
   $("#customer-filter").addEventListener("input",()=>{pageState.customers=1;renderCustomers($("#customer-filter").value);});
   $("#project-filter").addEventListener("input",()=>{pageState.projects=1;renderProjects($("#project-filter").value);});
   $("#refresh-business").addEventListener("click",load);
-  // Phần tử admin-operations chưa có trong giao diện hiện tại; kiểm tra tồn tại trước khi thao tác.
   if(admin) $("#admin-operations")?.classList.remove("hidden");
   view("register");load();
 
@@ -123,9 +121,6 @@ export function initProjectModule({db,user,profile}) {
       const newCustomer=doc(collection(db,"customers")), project=doc(collection(db,"projects"));
       const locks=phones.map(p=>doc(db,"customer_phone_locks",p)), addrLock=doc(db,"project_address_locks",addrId);
       b.disabled=true;b.textContent="Đang kiểm tra trùng…";
-
-      // Kiểm tra số điện thoại trước giao dịch để hiển thị lỗi nghiệp vụ dễ hiểu.
-      // Giao dịch bên dưới vẫn là lớp bảo vệ cuối cùng, tránh hai Sale đăng ký đồng thời.
       stage="kiểm tra số điện thoại đã đăng ký";
       const phoneLockSnaps = await Promise.all(
         phones.map(p => getDoc(doc(db,"customer_phone_locks",p)))
