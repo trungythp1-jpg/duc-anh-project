@@ -25,6 +25,13 @@ service cloud.firestore {
       return activeUser() && data.ownerSaleUid == request.auth.uid;
     }
 
+    match /user_sessions/{userId} {
+      allow get: if signedIn() && request.auth.uid == userId;
+      allow list: if false;
+      allow create, update: if signedIn() && request.auth.uid == userId && request.resource.data.uid == request.auth.uid && request.resource.data.sessionId is string && request.resource.data.sessionId.size() >= 20;
+      allow delete: if signedIn() && request.auth.uid == userId;
+    }
+
     match /users/{userId} {
       allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
