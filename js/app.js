@@ -26,6 +26,8 @@ const employeeFilter = document.querySelector("#employee-filter");
 const employeeCount = document.querySelector("#employee-count");
 const employeeMessage = document.querySelector("#employee-message");
 let employeeProfiles = [];
+let employeePage = 1;
+const EMPLOYEE_PAGE_SIZE = 10;
 
 function formatEmployeeDate(value) {
   if (!value) return "—";
@@ -35,13 +37,20 @@ function formatEmployeeDate(value) {
 
 function renderEmployees() {
   const term = (employeeFilter?.value || "").trim().toLocaleLowerCase("vi");
-  const rows = employeeProfiles.filter(({ uid, profile }) => {
+  const allRows = employeeProfiles.filter(({ uid, profile }) => {
     const text = `${profile.displayName || ""} ${uid}`.toLocaleLowerCase("vi");
     return text.includes(term);
   });
 
   employeeCount.textContent = `${employeeProfiles.length} NHÂN SỰ`;
-  if (!rows.length) {
+  const pages = Math.max(1, Math.ceil(allRows.length / EMPLOYEE_PAGE_SIZE));
+  employeePage = Math.min(employeePage, pages);
+  const rows = allRows.slice((employeePage - 1) * EMPLOYEE_PAGE_SIZE, employeePage * EMPLOYEE_PAGE_SIZE);
+  const pager = document.querySelector("#employees-pager");
+  if (pager) pager.innerHTML = allRows.length > EMPLOYEE_PAGE_SIZE ? `<span>Hiển thị ${(employeePage-1)*EMPLOYEE_PAGE_SIZE+1}–${Math.min(employeePage*EMPLOYEE_PAGE_SIZE,allRows.length)} / ${allRows.length}</span><div><button type="button" data-emp-page="prev" ${employeePage===1?"disabled":""}>‹ Trước</button><button type="button" data-emp-page="next" ${employeePage===pages?"disabled":""}>Sau ›</button></div>` : `<span>${allRows.length} mục</span>`;
+  pager?.querySelector('[data-emp-page="prev"]')?.addEventListener("click",()=>{employeePage--;renderEmployees();});
+  pager?.querySelector('[data-emp-page="next"]')?.addEventListener("click",()=>{employeePage++;renderEmployees();});
+  if (!allRows.length) {
     employeesTable.innerHTML = `<tr><td colspan="5" class="empty-cell">${employeeProfiles.length ? "Không tìm thấy nhân viên phù hợp." : "Chưa có hồ sơ nhân viên."}</td></tr>`;
     return;
   }
@@ -82,7 +91,7 @@ async function loadEmployees() {
   }
 }
 
-employeeFilter?.addEventListener("input", renderEmployees);
+employeeFilter?.addEventListener("input", () => { employeePage = 1; renderEmployees(); });
 
 function showLogin(message = "") {
   loginView.classList.remove("hidden");
