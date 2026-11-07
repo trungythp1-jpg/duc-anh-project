@@ -105,6 +105,27 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /project_delete_requests/{requestId} {
+      allow get, list: if isAdmin()
+        || (activeUser() && resource.data.requestedBy == request.auth.uid);
+      allow create: if activeUser()
+        && get(profilePath(request.auth.uid)).data.role == "sale"
+        && request.resource.data.requestedBy == request.auth.uid
+        && request.resource.data.requesterRole == "sale"
+        && request.resource.data.status == "pending"
+        && request.resource.data.projectId is string
+        && request.resource.data.reason is string
+        && exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId))
+        && get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.ownerSaleUid == request.auth.uid
+        && get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.status != "archived";
+      allow update: if isAdmin()
+        && resource.data.status == "pending"
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "reviewedBy", "reviewedAt"])
+        && request.resource.data.status in ["approved", "rejected"]
+        && request.resource.data.reviewedBy == request.auth.uid;
+      allow delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
