@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#123b32">
   <meta name="description" content="ĐỨC ANH PROJECT - Quản lý khách hàng và dự án thang máy.">
   <title>ĐỨC ANH PROJECT</title>
-  <link rel="stylesheet" href="./assets/css/app.css?v=20261107-7">
+  <link rel="stylesheet" href="./assets/css/app.css?v=20261107-8">
 </head>
 <body>
   <main class="shell">
@@ -36,9 +36,9 @@
       <div id="app-view" class="app-card hidden">
         <div class="user-line">
           <div><p class="eyebrow">TỔNG QUAN</p><h2 id="welcome-title">Xin chào</h2></div>
-          <button id="logout-btn" class="quiet-btn" type="button">Đăng xuất</button>
+          <div class="account-actions"><button id="change-password-toggle" class="quiet-btn" type="button">Đổi mật khẩu</button><button id="logout-btn" class="quiet-btn" type="button">Đăng xuất</button></div>
         </div>
-        <div class="role-chip" id="role-chip">ĐANG XÁC MINH QUYỀN</div>
+        <div class="role-chip" id="role-chip">ĐANG XÁC MINH QUYỀN</div><form id="change-password-form" class="account-form hidden"><h3>Đổi mật khẩu</h3><label for="current-password">Mật khẩu hiện tại</label><input id="current-password" type="password" autocomplete="current-password" required><label for="new-password">Mật khẩu mới</label><input id="new-password" type="password" minlength="6" autocomplete="new-password" required><label for="confirm-password">Nhập lại mật khẩu mới</label><input id="confirm-password" type="password" minlength="6" autocomplete="new-password" required><button class="primary-btn" type="submit">Cập nhật mật khẩu</button><p id="password-message" class="message" role="status"></p></form><p id="session-message" class="message" role="alert"></p>
                 <details id="admin-tools" class="admin-setup hidden"><summary>＋ Tạo hồ sơ nhân viên Sale</summary>
         <section class="admin-tools">
           
@@ -90,6 +90,6 @@
       <footer>© 2026 THANG MÁY ĐỨC ANH</footer>
     </section>
   </main>
-  <script type="module" src="./js/app.js?v=20261107-6"></script>
+  <script type="module" src="./js/app.js?v=20261107-7"></script>
 </body>
 </html>
