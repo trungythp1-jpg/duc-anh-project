@@ -46,7 +46,7 @@ service cloud.firestore {
           && request.resource.data.ownerSaleUid == resource.data.ownerSaleUid
           && request.resource.data.createdBy == resource.data.createdBy
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["updatedAt", "contactAddress"]));
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /projects/{projectId} {
@@ -69,7 +69,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "archivedAt", "archivedBy", "updatedAt"])
         && (request.resource.data.status == "archived" || request.resource.data.status == resource.data.status)
         && (!("archivedBy" in request.resource.data) || request.resource.data.archivedBy == request.auth.uid);
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /customer_phone_locks/{lockId} {
@@ -80,7 +80,8 @@ service cloud.firestore {
         && request.resource.data.customerId is string
         && existsAfter(/databases/$(database)/documents/customers/$(request.resource.data.customerId))
         && getAfter(/databases/$(database)/documents/customers/$(request.resource.data.customerId)).data.ownerSaleUid == request.auth.uid;
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     match /project_address_locks/{lockId} {
@@ -91,17 +92,23 @@ service cloud.firestore {
         && request.resource.data.projectId is string
         && existsAfter(/databases/$(database)/documents/projects/$(request.resource.data.projectId))
         && getAfter(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.ownerSaleUid == request.auth.uid;
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     match /project_history/{historyId} {
       allow get, list: if isAdmin()
         || (activeUser() && resource.data.actorUid == request.auth.uid);
-      allow create: if activeUser()
+      allow create: if (activeUser()
         && request.resource.data.actorUid == request.auth.uid
         && request.resource.data.action == "project_registered"
         && existsAfter(/databases/$(database)/documents/projects/$(request.resource.data.projectId))
-        && getAfter(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.ownerSaleUid == request.auth.uid;
+        && getAfter(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.ownerSaleUid == request.auth.uid)
+        || (isAdmin()
+          && request.resource.data.actorUid == request.auth.uid
+          && request.resource.data.action == "project_deleted"
+          && request.resource.data.projectId is string
+          && request.resource.data.reason is string);
       allow update, delete: if false;
     }
 
