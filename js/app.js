@@ -1,10 +1,10 @@
 import { auth, db } from "./firebase.js";
 import { initProjectModule } from "./projects.js?v=20261107-5";
 import {
-  onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence
+  onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence, updatePassword, reauthenticateWithCredential, EmailAuthProvider
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 import {
-  collection, doc, getDoc, getDocs, runTransaction, serverTimestamp
+  collection, doc, getDoc, getDocs, runTransaction, serverTimestamp, onSnapshot
 } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
 const loginView = document.querySelector("#login-view");
@@ -19,6 +19,9 @@ const saleMessage = document.querySelector("#sale-message");
 const createSaleButton = document.querySelector("#create-sale-btn");
 
 let currentAdmin = null;
+let sessionUnsubscribe = null;
+let activeSessionId = null;
+const sessionRefFor = uid => doc(db, "user_sessions", uid);
 
 const employeeDirectory = document.querySelector("#employee-directory");
 const employeesTable = document.querySelector("#employees-table");
@@ -93,7 +96,10 @@ async function loadEmployees() {
 
 employeeFilter?.addEventListener("input", () => { employeePage = 1; renderEmployees(); });
 
+function stopSessionWatch() { if (sessionUnsubscribe) sessionUnsubscribe(); sessionUnsubscribe = null; activeSessionId = null; }
+
 function showLogin(message = "") {
+  stopSessionWatch();
   loginView.classList.remove("hidden");
   appView.classList.add("hidden");
   adminTools.classList.add("hidden");
@@ -135,7 +141,34 @@ loginForm.addEventListener("submit", async (event) => {
   }
 });
 
-document.querySelector("#logout-btn").addEventListener("click", () => signOut(auth));
+document.querySelector("#logout-btn").addEventListener("click", async () => {
+  const user=auth.currentUser;
+  if(user&&activeSessionId){try{await runTransaction(db,async tx=>{const ref=sessionRefFor(user.uid);const snap=await tx.get(ref);if(snap.exists()&&snap.data().sessionId===activeSessionId)tx.delete(ref);});}catch{}}
+  stopSessionWatch(); await signOut(auth);
+});
+document.querySelector("#change-password-toggle").addEventListener("click",()=>document.querySelector("#change-password-form").classList.toggle("hidden"));
+document.querySelector("#change-password-form").addEventListener("submit",async event=>{
+  event.preventDefault();
+  const message=document.querySelector("#password-message");
+  const current=document.querySelector("#current-password").value;
+  const next=document.querySelector("#new-password").value;
+  const confirm=document.querySelector("#confirm-password").value;
+  message.classList.remove("success");message.textContent="";
+  if(next.length<6){message.textContent="Mật khẩu mới phải có ít nhất 6 ký tự.";return;}
+  if(next!==confirm){message.textContent="Mật khẩu nhập lại không khớp.";return;}
+  try{const user=auth.currentUser;await reauthenticateWithCredential(user,EmailAuthProvider.credential(user.email,current));await updatePassword(user,next);event.target.reset();message.textContent="Đã cập nhật mật khẩu.";message.classList.add("success");}
+  catch(error){message.textContent=error.code==="auth/wrong-password"||error.code==="auth/invalid-credential"?"Mật khẩu hiện tại không chính xác.":error.code==="auth/requires-recent-login"?"Phiên đăng nhập đã cũ. Vui lòng đăng nhập lại.":friendlyError(error);}
+});
+async function claimSingleSession(user){
+  let id=sessionStorage.getItem("da_project_session");
+  if(!id){id=crypto.randomUUID();sessionStorage.setItem("da_project_session",id);}
+  const ref=sessionRefFor(user.uid);
+  await runTransaction(db,async tx=>{const snap=await tx.get(ref);tx.set(ref,{sessionId:id,uid:user.uid,updatedAt:serverTimestamp(),userAgent:navigator.userAgent.slice(0,180)});});
+  activeSessionId=id;
+  sessionUnsubscribe=onSnapshot(ref,snap=>{
+    if(!snap.exists()||snap.data().sessionId!==activeSessionId){stopSessionWatch();signOut(auth).finally(()=>showLogin("Tài khoản đã được đăng nhập trên thiết bị khác. Vui lòng đăng nhập lại."));}
+  });
+}
 
 saleForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -214,6 +247,7 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
 
+    await claimSingleSession(user);
     document.querySelector("#welcome-title").textContent = profile.displayName || user.email || "Người dùng";
     document.querySelector("#business-module")?.classList.remove("hidden");
     initProjectModule({ db, user, profile });
