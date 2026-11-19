@@ -238,3 +238,32 @@ html, body { width:100%; max-width:100%; overflow-x:hidden; }
 .admin-operations.hidden{display:none!important}
 
 .account-actions{display:flex;gap:8px;align-items:center}.account-form{margin:14px 0;padding:16px;border:1px solid #e3eae5;border-radius:12px;background:#fbfcfa}.account-form h3{margin:0 0 12px}.account-form label{display:block;margin:10px 0 6px}.account-form input{width:100%;box-sizing:border-box}#session-message{margin:8px 0}
+
+
+/* Installation management module */
+.install-shell{max-width:1100px;margin:28px auto 0;padding:22px;border:1px solid #e2e9e3;border-radius:16px;background:#fbfcfa}
+.install-head,.install-detail-head,.install-elevator-head{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.install-head h3{margin:0;color:#17362d;font-size:22px}.install-muted{font-size:11px;color:#78877f;line-height:1.6;margin:7px 0 0}
+.install-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:20px 0 12px}
+.install-tabs button{border:1px solid #dce5de;background:#fff;color:#456052;padding:10px 13px;border-radius:9px;font:inherit;font-size:11px;cursor:pointer}
+.install-tabs button.active{background:#17483b;color:#fff;border-color:#17483b}
+.install-card{background:#fff;border:1px solid #e4ebe5;border-radius:12px;padding:18px;margin:14px 0}
+.install-card h4{font-size:15px;color:#1d4738;margin:0 0 14px}.install-card h5{font-size:13px;color:#244b3b;margin:4px 0 12px}
+.install-form label,.install-stage label{display:block;font-size:11px;margin:8px 0 5px}
+.install-form input,.install-form select,.install-form textarea,.install-stage input,.install-stage select,.install-elevator select{width:100%;min-height:40px;border:1px solid #dce5de;border-radius:8px;padding:8px 10px;background:#fff;font:inherit;font-size:12px;margin:0}
+.install-form textarea{resize:vertical}.install-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:8px 0}
+.install-form .primary-btn{margin-top:14px;max-width:360px;min-height:46px}
+.install-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.install-stats>div{background:#fff;border:1px solid #e4ebe5;border-radius:12px;padding:16px}
+.install-stats small,.install-stats strong{display:block}.install-stats small{font-size:10px;color:#78877f}.install-stats strong{font-size:25px;color:#17483b;margin-top:7px}
+.install-project-row{display:flex;justify-content:space-between;align-items:center;width:100%;gap:10px;padding:13px 4px;border:0;border-bottom:1px solid #edf1ed;background:#fff;text-align:left;cursor:pointer;color:#244b3b}
+.install-project-row span,.install-project-row small{display:block}.install-project-row small{font-size:10px;color:#839087;margin-top:5px}.install-project-row b{font-size:10px}
+.install-row,.install-overview-row{display:grid;grid-template-columns:1fr 2fr auto;gap:10px;align-items:center;padding:11px 4px;border-bottom:1px solid #edf1ed;font-size:12px}.install-row button{border:1px solid #dce5de;background:#fff;border-radius:7px;padding:7px 9px;font-size:10px;color:#486254}
+.install-overview-row{grid-template-columns:2fr 1fr}.install-empty{font-size:12px;color:#829087;padding:12px 0}
+.install-elevator{border:1px solid #e2e9e3;border-radius:12px;padding:15px;margin:14px 0;background:#fff}
+.install-elevator-head h5{margin:0;font-size:15px;color:#1c4938}.install-elevator-head p{margin:5px 0 0;font-size:10px;color:#829087}
+.install-status{display:inline-block;padding:10px;color:#456052;font-size:11px}
+.install-stages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.install-stage{background:#f8faf8;border:1px solid #e9efea;border-radius:9px;padding:11px}.install-stage-title{font-size:12px;font-weight:700;color:#27503f}
+.install-stage .install-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:760px){.install-shell{padding:13px;margin-top:16px}.install-head{align-items:flex-start}.install-head h3{font-size:18px}.install-stats{gap:6px}.install-stats>div{padding:10px}.install-stats strong{font-size:20px}.install-card{padding:13px}.install-grid,.install-stages{grid-template-columns:1fr}.install-stage .install-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.install-tabs button{padding:9px 10px}.install-detail-head{align-items:flex-start;flex-direction:column}}
