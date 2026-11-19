@@ -55,7 +55,15 @@ export function initInstallationModule({db,user,profile}) {
       <section data-panel="logs" class="install-panel hidden"><div class="install-card"><h4>Nhật ký hoạt động gần đây</h4><div id="install-logs"></div></div></section>
     </section>`;
   root.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>showTab(b.dataset.tab)));
-  function showTab(name){root.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===name));root.querySelectorAll("[data-panel]").forEach(p=>p.classList.toggle("hidden",p.dataset.panel!==name));}
+  function showTab(name){root.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===name));root.querySelectorAll("[data-panel]").forEach(p=>p.classList.toggle("hidden",p.dataset.panel!==name));if(name==="logs")loadLogs();}
+  async function loadLogs(){
+    const target=$("#install-logs",root);if(!target)return;
+    try{
+      const snap=await getDocs(query(col("project_activity_logs"),orderBy("createdAt","desc")));
+      const rows=snap.docs.slice(0,100).map(d=>({id:d.id,...d.data()}));
+      target.innerHTML=rows.length?rows.map(x=>'<div class="install-overview-row"><strong>'+esc(x.action||x.field||"Thay đổi")+'</strong><span>'+esc(x.field||"")+' · '+esc(x.actorUid||"")+'</span></div>').join(""):'<p class="install-empty">Chưa có nhật ký hoạt động.</p>';
+    }catch(e){target.textContent="Không tải được nhật ký: "+e.message;}
+  }
   async function loadAll(){
     say("Đang tải dữ liệu…");
     try{
@@ -75,8 +83,8 @@ export function initInstallationModule({db,user,profile}) {
     $("#execution-source",root).innerHTML='<option value="">Chọn công trình đã đăng ký</option>'+sourceProjects.filter(s=>!projects.some(p=>p.sourceProjectId===s.id)).map(s=>'<option value="'+esc(s.id)+'">'+esc(s.projectName)+' · '+esc(s.customerName||"")+' · '+esc(s.siteAddress||"")+'</option>').join("");
     $("#execution-team",root).innerHTML='<option value="">Chưa phân công</option>'+getTeams();
     $("#elevator-team",root).innerHTML='<option value="">Dùng đội mặc định</option>'+getTeams();
-    $("#team-list",root).innerHTML=teams.length?'<div class="install-table">'+teams.map(t=>'<div class="install-row"><strong>'+esc(t.teamCode)+'</strong><span>'+esc(t.teamName)+'</span><button data-team-toggle="'+esc(t.id)+'">'+(t.isActive===false?'Kích hoạt':'Ngừng hoạt động')+'</button></div>').join("")+'</div>':'<p class="install-empty">Chưa có đội lắp đặt.</p>';
-    $("#tech-list",root).innerHTML=technicians.length?'<div class="install-table">'+technicians.map(t=>'<div class="install-row"><strong>'+esc(t.name)+'</strong><span>'+esc(t.phone)+'</span><button data-tech-toggle="'+esc(t.id)+'">'+(t.isActive===false?'Kích hoạt':'Ngừng hoạt động')+'</button></div>').join("")+'</div>':'<p class="install-empty">Chưa có kỹ thuật.</p>';
+    $("#team-list",root).innerHTML=teams.length?'<div class="install-table">'+teams.map(t=>'<div class="install-row"><strong>'+esc(t.teamCode)+'</strong><span>'+esc(t.teamName)+'</span><button data-team-edit="'+esc(t.id)+'">Sửa</button><button data-team-toggle="'+esc(t.id)+'">'+(t.isActive===false?'Kích hoạt':'Ngừng hoạt động')+'</button></div>').join("")+'</div>':'<p class="install-empty">Chưa có đội lắp đặt.</p>';
+    $("#tech-list",root).innerHTML=technicians.length?'<div class="install-table">'+technicians.map(t=>'<div class="install-row"><strong>'+esc(t.name)+'</strong><span>'+esc(t.phone)+'</span><button data-tech-edit="'+esc(t.id)+'">Sửa</button><button data-tech-toggle="'+esc(t.id)+'">'+(t.isActive===false?'Kích hoạt':'Ngừng hoạt động')+'</button></div>').join("")+'</div>':'<p class="install-empty">Chưa có kỹ thuật.</p>';
     $("#execution-list",root).innerHTML=projects.length?projects.map(p=>'<button class="install-project-row" data-open-project="'+esc(p.id)+'"><span><strong>'+esc(p.projectName)+'</strong><small>'+esc(p.contractNumber||"Chưa có số HĐ")+' · '+esc(p.siteAddress||"")+'</small></span><b>'+esc(p.status||"NOT_STARTED")+'</b></button>').join(""):'<p class="install-empty">Chưa có hồ sơ thi công.</p>';
     const complete=projects.filter(p=>p.status==="COMPLETED").length;
     $("#install-stats",root).innerHTML='<div><small>Tổng công trình</small><strong>'+projects.length+'</strong></div><div><small>Đang thi công</small><strong>'+projects.filter(p=>p.status==="IN_PROGRESS").length+'</strong></div><div><small>Hoàn thành</small><strong>'+complete+'</strong></div>';
