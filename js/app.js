@@ -255,6 +255,7 @@ onAuthStateChanged(auth, async (user) => {
     document.querySelector("#welcome-title").textContent = profile.displayName || user.email || "Người dùng";
     document.querySelector("#business-module")?.classList.remove("hidden");
     initProjectModule({ db, user, profile });
+    if (profile.role === "admin") initInstallationModule({ db, user, profile });
     document.querySelector("#role-chip").textContent = profile.role === "admin" ? "ADMINISTRATOR" : "SALES";
     profileMessage.textContent = "Đăng nhập thành công.";
     profileMessage.classList.add("success");
