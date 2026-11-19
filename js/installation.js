@@ -82,8 +82,21 @@ export function initInstallationModule({db,user,profile}) {
     $("#install-stats",root).innerHTML='<div><small>Tổng công trình</small><strong>'+projects.length+'</strong></div><div><small>Đang thi công</small><strong>'+projects.filter(p=>p.status==="IN_PROGRESS").length+'</strong></div><div><small>Hoàn thành</small><strong>'+complete+'</strong></div>';
     $("#install-overview-list",root).innerHTML=projects.slice(0,8).map(p=>'<div class="install-overview-row"><strong>'+esc(p.projectName)+'</strong><span>'+esc(p.status||"NOT_STARTED")+'</span></div>').join("")||'<p class="install-empty">Chưa có công trình.</p>';
     root.querySelectorAll("[data-team-toggle]").forEach(b=>b.addEventListener("click",()=>toggleCatalog("installation_teams",b.dataset.teamToggle,teams)));
+    root.querySelectorAll("[data-team-edit]").forEach(b=>b.addEventListener("click",()=>editCatalog("installation_teams",b.dataset.teamEdit,teams,"teamCode","teamName")));
+    root.querySelectorAll("[data-tech-edit]").forEach(b=>b.addEventListener("click",()=>editCatalog("technicians",b.dataset.techEdit,technicians,"name","phone")));
     root.querySelectorAll("[data-tech-toggle]").forEach(b=>b.addEventListener("click",()=>toggleCatalog("technicians",b.dataset.techToggle,technicians)));
     root.querySelectorAll("[data-open-project]").forEach(b=>b.addEventListener("click",()=>openProject(b.dataset.openProject)));
+  }
+  async function editCatalog(name,id,rows,fieldA,fieldB){
+    const item=rows.find(x=>x.id===id);if(!item)return;
+    const a=prompt(fieldA==="teamCode"?"Mã đội":"Họ và tên",item[fieldA]||"");if(a===null)return;
+    const b=prompt(fieldB==="teamName"?"Tên đội":"Số điện thoại",item[fieldB]||"");if(b===null)return;
+    if(!a.trim()||!b.trim()){say("Thông tin không được để trống.");return;}
+    try{
+      await updateDoc(doc(db,name,id),{[fieldA]:a.trim(),[fieldB]:b.trim(),updatedAt:serverTimestamp(),updatedBy:user.uid});
+      await log(null,null,"catalog_updated",name,{[fieldA]:item[fieldA],[fieldB]:item[fieldB]},{[fieldA]:a.trim(),[fieldB]:b.trim()});
+      await loadAll();say("Đã cập nhật danh mục. Snapshot ở kế hoạch cũ được giữ nguyên.",true);
+    }catch(e){say("Không sửa được danh mục: "+e.message);}
   }
   async function toggleCatalog(name,id,rows){
     const item=rows.find(x=>x.id===id);if(!item)return;
@@ -133,7 +146,8 @@ export function initInstallationModule({db,user,profile}) {
     target.innerHTML=elevators.length?elevators.map(el=>{
       const stages=STAGES.map(([key,label])=>{
         const s=el.stages?.[key]||{},isTech=["operation","tapeRemoval"].includes(key);
-        return '<div class="install-stage"><div class="install-stage-title">'+label+'</div><div class="install-grid"><div><label>Trạng thái</label><select data-stage="'+key+'" data-field="status" data-elevator="'+esc(el.id)+'">'+statusValue.map((v,i)=>'<option value="'+v+'" '+(s.status===v?'selected':'')+'>'+STATUS[i]+'</option>').join("")+'</select></div><div><label>Ngày dự kiến</label><input type="date" data-stage="'+key+'" data-field="plannedDate" data-elevator="'+esc(el.id)+'" value="'+esc(s.plannedDate||"")+'"></div><div><label>Ngày thực tế</label><input type="date" data-stage="'+key+'" data-field="actualDate" data-elevator="'+esc(el.id)+'" value="'+esc(s.actualDate||"")+'"></div>'+(isTech?'<div><label>Kỹ thuật thực hiện</label><select data-stage="'+key+'" data-field="technicianId" data-elevator="'+esc(el.id)+'"><option value="">Chọn kỹ thuật</option>'+technicians.map(t=>'<option value="'+esc(t.id)+'" '+(s.technicianId===t.id?'selected':'')+'>'+esc(t.name)+' · '+esc(t.phone)+'</option>').join("")+'</select></div>':'')+'</div></div>';
+        const opts=key==="inspection"?[["NOT_INSPECTED","Chưa kiểm định"],["REGISTERED","Đã đăng ký"],["PASSED","Đạt"],["FAILED","Không đạt"]]:key==="handover"?[["NOT_HANDED_OVER","Chưa bàn giao"],["IN_PROGRESS","Đang bàn giao"],["HANDED_OVER","Đã bàn giao"]]:statusValue.map((v,i)=>[v,STATUS[i]]);
+        return '<div class="install-stage"><div class="install-stage-title">'+label+'</div><div class="install-grid"><div><label>Trạng thái</label><select data-stage="'+key+'" data-field="status" data-elevator="'+esc(el.id)+'">'+opts.map(([v,n])=>'<option value="'+v+'" '+(s.status===v?'selected':'')+'>'+n+'</option>').join("")+'</select></div><div><label>Ngày dự kiến</label><input type="date" data-stage="'+key+'" data-field="plannedDate" data-elevator="'+esc(el.id)+'" value="'+esc(s.plannedDate||"")+'"></div><div><label>Ngày thực tế</label><input type="date" data-stage="'+key+'" data-field="actualDate" data-elevator="'+esc(el.id)+'" value="'+esc(s.actualDate||"")+'"></div>'+(isTech?'<div><label>Kỹ thuật thực hiện</label><select data-stage="'+key+'" data-field="technicianId" data-elevator="'+esc(el.id)+'"><option value="">Chọn kỹ thuật</option>'+technicians.map(t=>'<option value="'+esc(t.id)+'" '+(s.technicianId===t.id?'selected':'')+'>'+esc(t.name)+' · '+esc(t.phone)+'</option>').join("")+'</select></div>':'')+'</div></div>';
       }).join("");
       return '<article class="install-elevator"><div class="install-elevator-head"><div><h5>'+esc(el.label)+'</h5><p>'+esc(el.capacityKg||"—")+' kg · '+esc(el.stops||"—")+' điểm dừng · '+esc(el.assignedTeamNameSnapshot||"Chưa phân công đội")+'</p></div><button data-team-change="'+esc(el.id)+'" class="quiet-btn">Đổi đội</button></div><div class="install-grid"><div><label>Đội lắp đặt hiện tại</label><select data-elevator-team="'+esc(el.id)+'"><option value="">Chưa phân công</option>'+teams.map(t=>'<option value="'+esc(t.id)+'" '+(el.assignedTeamId===t.id?'selected':'')+'>'+esc(t.teamCode)+' · '+esc(t.teamName)+'</option>').join("")+'</select></div><div><label>Trạng thái thang</label><span class="install-status">'+esc(el.status||"NOT_STARTED")+'</span></div></div><div class="install-stages">'+stages+'</div></article>';
     }).join(""):'<p class="install-empty">Chưa có thang máy trong công trình này.</p>';
@@ -144,15 +158,25 @@ export function initInstallationModule({db,user,profile}) {
     const elevator=elevators.find(x=>x.id===input.dataset.elevator);if(!elevator)return;
     const key=input.dataset.stage,field=input.dataset.field,value=input.value,old=elevator.stages?.[key]?.[field]??"";
     if(old===value)return;
-    const next={...(elevator.stages||{}) ,[key]:{...(elevator.stages?.[key]||{status:"NOT_STARTED",plannedDate:"",actualDate:""}),[field]:value}};
-    if(field==="status"&&value==="DONE"&&!next[key].actualDate){say("Vui lòng nhập ngày thực tế trước khi hoàn thành công đoạn.");input.value=old;return;}
-    if(field==="technicianId"&&value){const tech=technicians.find(t=>t.id===value);next[key].technicianNameSnapshot=tech?.name||"";next[key].technicianPhoneSnapshot=tech?.phone||"";}
-    const allDone=STAGES.every(([k])=>k==="handover"?next[k]?.status==="DONE":true);
-    const projectStatus=allDone?"COMPLETED":"IN_PROGRESS";
+    const next={...(elevator.stages||{}),[key]:{...(elevator.stages?.[key]||{status:key==="inspection"?"NOT_INSPECTED":key==="handover"?"NOT_HANDED_OVER":"NOT_STARTED",plannedDate:"",actualDate:""}),[field]:value}};
+    const s=next[key];
+    if(field==="status"){
+      if(["shipment","installation","operation","tapeRemoval"].includes(key)&&value==="DONE"&&!s.actualDate){say("Vui lòng nhập ngày thực tế trước khi hoàn thành công đoạn.");input.value=old;return;}
+      if(["operation","tapeRemoval"].includes(key)&&value==="DONE"&&!s.technicianId){say("Vui lòng chọn kỹ thuật viên thực hiện.");input.value=old;return;}
+      if(key==="inspection"&&value==="PASSED"&&!s.actualDate){say("Kiểm định đạt phải có ngày kiểm định thực tế.");input.value=old;return;}
+      if(key==="handover"&&value==="HANDED_OVER"&&(!s.actualDate||next.inspection?.status!=="PASSED")){say("Chỉ được bàn giao khi kiểm định đã đạt và có ngày bàn giao thực tế.");input.value=old;return;}
+    }
+    if(field==="actualDate"&&value===""&&((key==="handover"&&s.status==="HANDED_OVER")||(key==="inspection"&&s.status==="PASSED")||(s.status==="DONE"))){say("Không thể bỏ ngày thực tế khi công đoạn đã hoàn thành.");input.value=old;return;}
+    if(field==="technicianId"&&value){const tech=technicians.find(t=>t.id===value);s.technicianNameSnapshot=tech?.name||"";s.technicianPhoneSnapshot=tech?.phone||"";}
+    const elevatorStatus=next.handover?.status==="HANDED_OVER"?"COMPLETED":Object.values(next).some(x=>x.status&& !["NOT_STARTED","NOT_INSPECTED","NOT_HANDED_OVER"].includes(x.status))?"IN_PROGRESS":"NOT_STARTED";
     try{
-      await updateDoc(doc(db,"execution_projects",selected.id,"elevators",elevator.id),{stages:next,status:projectStatus,updatedAt:serverTimestamp(),updatedBy:user.uid});
+      await updateDoc(doc(db,"execution_projects",selected.id,"elevators",elevator.id),{stages:next,status:elevatorStatus,updatedAt:serverTimestamp(),updatedBy:user.uid});
+      const allSnap=await getDocs(collection(db,"execution_projects",selected.id,"elevators"));
+      const all=allSnap.docs.map(d=>d.id===elevator.id?{...d.data(),stages:next}:d.data());
+      const projectStatus=all.length&&all.every(x=>x.stages?.handover?.status==="HANDED_OVER")?"COMPLETED":all.some(x=>Object.values(x.stages||{}).some(v=>v.status&& !["NOT_STARTED","NOT_INSPECTED","NOT_HANDED_OVER"].includes(v.status)))?"IN_PROGRESS":"NOT_STARTED";
+      await updateDoc(doc(db,"execution_projects",selected.id),{status:projectStatus,updatedAt:serverTimestamp(),updatedBy:user.uid});
       await log(selected.id,elevator.id,"stage_updated",key+"."+field,old,value);
-      elevator.stages=next;elevator.status=projectStatus;renderElevators();say("Đã cập nhật tiến độ.",true);
+      elevator.stages=next;elevator.status=elevatorStatus;selected.status=projectStatus;renderElevators();say("Đã cập nhật tiến độ.",true);
     }catch(err){say("Không cập nhật được tiến độ: "+err.message);input.value=old;}
   }
   async function changeTeam(input){
