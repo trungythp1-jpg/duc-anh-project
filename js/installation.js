@@ -18,7 +18,7 @@ export function initInstallationModule({db,user,profile}) {
   const root=$("#installation-module");
   if(!root) return;
   root.classList.remove("hidden");
-  let projects=[], sourceProjects=[], teams=[], technicians=[], selected=null, elevators=[];
+  let projects=[], teams=[], technicians=[], selected=null, elevators=[];
   const say=(message,ok=false)=>{const el=$("#installation-message",root);el.textContent=message;el.className="message"+(ok?" success":"");};
   const col=name=>collection(db,name);
   const log=async (projectId,elevatorId,action,field,oldValue,newValue)=>{
@@ -34,9 +34,10 @@ export function initInstallationModule({db,user,profile}) {
       <p id="installation-message" class="message" role="status"></p>
       <section data-panel="overview" class="install-panel"><div class="install-stats" id="install-stats"></div><div class="install-card"><h4>Tiến độ công trình</h4><div id="install-overview-list"></div></div></section>
       <section data-panel="projects" class="install-panel hidden">
-        <div class="install-card"><h4>Tạo hồ sơ thi công từ công trình Sale</h4><form id="execution-create" class="install-form">
-          <label>Chọn công trình Sale *</label><select id="execution-source" required><option value="">Chọn công trình đã đăng ký</option></select>
-          <div class="install-grid"><div><label>Số hợp đồng</label><input id="execution-contract" placeholder="Nhập số hợp đồng"></div><div><label>Đội lắp đặt mặc định</label><select id="execution-team"><option value="">Chưa phân công</option>${getTeams()}</select></div></div>
+        <div class="install-card"><h4>Tạo công trình thi công</h4><form id="execution-create" class="install-form">
+          <div class="install-grid"><div><label>Tên công trình *</label><input id="execution-name" required placeholder="Ví dụ: Nhà anh Nguyễn Văn A"></div><div><label>Tên khách hàng / chủ đầu tư</label><input id="execution-customer" placeholder="Nhập tên khách hàng"></div>
+          <div><label>Số hợp đồng</label><input id="execution-contract" placeholder="Nhập số hợp đồng"></div><div><label>Địa chỉ công trình *</label><input id="execution-address" required placeholder="Số nhà, đường, phường/xã"></div>
+          <div><label>Tỉnh / thành phố</label><input id="execution-province" placeholder="Hải Phòng"></div><div><label>Đội lắp đặt mặc định</label><select id="execution-team"><option value="">Chưa phân công</option>${getTeams()}</select></div></div>
           <label>Ghi chú</label><textarea id="execution-notes" rows="2"></textarea><button class="primary-btn" type="submit">Tạo hồ sơ thi công</button>
         </form></div>
         <div class="install-card"><h4>Danh sách công trình thi công</h4><div id="execution-list"></div></div>
@@ -67,20 +68,17 @@ export function initInstallationModule({db,user,profile}) {
   async function loadAll(){
     say("Đang tải dữ liệu…");
     try{
-      const [p,t,tech,s]=await Promise.all([
+      const [p,t,tech]=await Promise.all([
         getDocs(query(col("execution_projects"),orderBy("updatedAt","desc"))),
-        getDocs(col("installation_teams")),getDocs(col("technicians")),
-        getDocs(query(col("projects"),orderBy("createdAt","desc")))
+        getDocs(col("installation_teams")),getDocs(col("technicians"))
       ]);
       projects=p.docs.map(d=>({id:d.id,...d.data()}));
       teams=t.docs.map(d=>({id:d.id,...d.data()}));
       technicians=tech.docs.map(d=>({id:d.id,...d.data()}));
-      sourceProjects=s.docs.map(d=>({id:d.id,...d.data()})).filter(x=>x.status==="signed");
       renderAll();say("Đã tải dữ liệu.",true);
     }catch(e){say("Không tải được dữ liệu thi công: "+(e.message||e));}
   }
   function renderAll(){
-    $("#execution-source",root).innerHTML='<option value="">Chọn công trình đã đăng ký</option>'+sourceProjects.filter(s=>!projects.some(p=>p.sourceProjectId===s.id)).map(s=>'<option value="'+esc(s.id)+'">'+esc(s.projectName)+' · '+esc(s.customerName||"")+' · '+esc(s.siteAddress||"")+'</option>').join("");
     $("#execution-team",root).innerHTML='<option value="">Chưa phân công</option>'+getTeams();
     $("#elevator-team",root).innerHTML='<option value="">Dùng đội mặc định</option>'+getTeams();
     $("#team-list",root).innerHTML=teams.length?'<div class="install-table">'+teams.map(t=>'<div class="install-row"><strong>'+esc(t.teamCode)+'</strong><span>'+esc(t.teamName)+'</span><button data-team-edit="'+esc(t.id)+'">Sửa</button><button data-team-toggle="'+esc(t.id)+'">'+(t.isActive===false?'Kích hoạt':'Ngừng hoạt động')+'</button></div>').join("")+'</div>':'<p class="install-empty">Chưa có đội lắp đặt.</p>';
@@ -124,11 +122,13 @@ export function initInstallationModule({db,user,profile}) {
     catch(err){say("Không thêm được kỹ thuật: "+err.message);}
   });
   $("#execution-create",root).addEventListener("submit",async e=>{
-    e.preventDefault();const sourceId=$("#execution-source",root).value,src=sourceProjects.find(x=>x.id===sourceId);if(!src)return;
+    e.preventDefault();
+    const projectName=$("#execution-name",root).value.trim(),siteAddress=$("#execution-address",root).value.trim();
+    if(!projectName||!siteAddress){say("Vui lòng nhập tên và địa chỉ công trình.");return;}
     const teamId=$("#execution-team",root).value,team=teams.find(x=>x.id===teamId);
     try{
-      const ref=await addDoc(col("execution_projects"),{sourceProjectId:src.id,sourceCustomerId:src.customerId||null,contractNumber:$("#execution-contract",root).value.trim(),projectName:src.projectName||"",customerName:src.customerName||"",siteAddress:src.siteAddress||"",provinceCity:src.provinceCity||"",notes:$("#execution-notes",root).value.trim(),defaultTeamId:team?.id||null,defaultTeamCodeSnapshot:team?.teamCode||null,defaultTeamNameSnapshot:team?.teamName||null,status:"NOT_STARTED",createdAt:serverTimestamp(),createdBy:user.uid,updatedAt:serverTimestamp(),updatedBy:user.uid});
-      await log(ref.id,null,"execution_project_created","project",null,{sourceProjectId:src.id,projectName:src.projectName,team:team?.teamName||null});
+      const ref=await addDoc(col("execution_projects"),{sourceProjectId:null,contractNumber:$("#execution-contract",root).value.trim(),projectName,customerName:$("#execution-customer",root).value.trim(),siteAddress,provinceCity:$("#execution-province",root).value.trim(),notes:$("#execution-notes",root).value.trim(),defaultTeamId:team?.id||null,defaultTeamCodeSnapshot:team?.teamCode||null,defaultTeamNameSnapshot:team?.teamName||null,status:"NOT_STARTED",createdAt:serverTimestamp(),createdBy:user.uid,updatedAt:serverTimestamp(),updatedBy:user.uid});
+      await log(ref.id,null,"execution_project_created","project",null,{projectName,siteAddress,team:team?.teamName||null});
       e.target.reset();await loadAll();await openProject(ref.id);
     }catch(err){say("Không tạo được hồ sơ thi công: "+err.message);}
   });
