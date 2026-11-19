@@ -140,6 +140,48 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+
+    // Installation module — Admin only. Sale has no read or write access.
+    match /execution_projects/{executionProjectId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.sourceProjectId is string
+        && request.resource.data.projectName is string;
+      allow update: if isAdmin()
+        && request.resource.data.updatedBy == request.auth.uid;
+      allow delete: if isAdmin();
+
+      match /elevators/{elevatorId} {
+        allow get, list: if isAdmin();
+        allow create: if isAdmin()
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update: if isAdmin()
+          && request.resource.data.updatedBy == request.auth.uid;
+        allow delete: if isAdmin();
+      }
+    }
+
+    match /installation_teams/{teamId} {
+      allow get, list: if isAdmin();
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /technicians/{technicianId} {
+      allow get, list: if isAdmin();
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /project_activity_logs/{logId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.actorRole == "admin";
+      allow update, delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
