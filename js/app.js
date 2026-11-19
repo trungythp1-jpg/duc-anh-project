@@ -105,6 +105,7 @@ function showLogin(message = "") {
   appView.classList.add("hidden");
   adminTools.classList.add("hidden");
   employeeDirectory?.classList.add("hidden");
+  document.querySelector("#installation-module")?.classList.add("hidden");
   loginMessage.textContent = message;
   currentAdmin = null;
 }
